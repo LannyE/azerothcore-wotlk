@@ -34,7 +34,6 @@
 #include "Position.h"
 #include "SharedDefines.h"
 #include "TaskScheduler.h"
-#include "Timer.h"
 #include "GridTerrainData.h"
 #include <bitset>
 #include <list>
@@ -86,7 +85,6 @@ struct ScriptAction
 
 #define DEFAULT_HEIGHT_SEARCH     50.0f                     // default search distance to find height at nearby locations
 #define MIN_UNLOAD_DELAY      1                             // immediate unload
-#define UPDATABLE_OBJECT_LIST_RECHECK_TIMER 30 * IN_MILLISECONDS // Time to recheck update object list
 
 struct PositionFullTerrainStatus
 {
@@ -191,7 +189,6 @@ public:
                                   TypeContainerVisitor<Acore::ObjectUpdater, WorldTypeMapContainer>& worldVisitor,
                                   TypeContainerVisitor<Acore::ObjectUpdater, GridTypeMapContainer>& largeGridVisitor,
                                   TypeContainerVisitor<Acore::ObjectUpdater, WorldTypeMapContainer>& largeWorldVisitor);
-    void MarkNearbyCellsOf(WorldObject* obj);
 
     virtual void Update(const uint32, const uint32, bool thread = true);
 
@@ -515,12 +512,6 @@ public:
     uint32 GetCreatedCellsInGridCount(uint16 const x, uint16 const y);
     uint32 GetCreatedCellsInMapCount();
 
-    void AddObjectToPendingUpdateList(WorldObject* obj);
-    void RemoveObjectFromMapUpdateList(WorldObject* obj);
-
-    typedef std::vector<WorldObject*> UpdatableObjectList;
-    typedef std::unordered_set<WorldObject*> PendingAddUpdatableObjectList;
-
 private:
 
     template<class T> void InitializeObject(T* obj);
@@ -619,11 +610,6 @@ private:
             m_activeNonPlayers.erase(obj);
     }
 
-    void UpdateNonPlayerObjects(uint32 const diff);
-
-    void _AddObjectToUpdateList(WorldObject* obj);
-    void _RemoveObjectFromUpdateList(WorldObject* obj);
-
     std::unordered_map<ObjectGuid::LowType /*dbGUID*/, time_t> _creatureRespawnTimes;
     std::unordered_map<ObjectGuid::LowType /*dbGUID*/, time_t> _goRespawnTimes;
 
@@ -651,10 +637,6 @@ private:
     std::unordered_set<Corpse*> _corpseBones;
 
     std::unordered_set<Object*> _updateObjects;
-
-    UpdatableObjectList _updatableObjectList;
-    PendingAddUpdatableObjectList _pendingAddUpdatableObjectList;
-    IntervalTimer _updatableObjectListRecheckTimer;
 };
 
 enum InstanceResetMethod
