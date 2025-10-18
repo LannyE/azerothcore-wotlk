@@ -22,10 +22,8 @@
 
 DoorData const doorData[] =
 {
-    { GO_BJARNGRIM_DOOR, DATA_BJARNGRIM, DOOR_TYPE_PASSAGE },
     { GO_VOLKHAN_DOOR,   DATA_VOLKHAN,   DOOR_TYPE_PASSAGE },
     { GO_IONAR_DOOR,     DATA_IONAR,     DOOR_TYPE_PASSAGE },
-    { GO_LOKEN_DOOR,     DATA_LOKEN,     DOOR_TYPE_PASSAGE },
     { 0,                        0,       DOOR_TYPE_ROOM    }
 };
 
@@ -48,8 +46,8 @@ public:
             SetBossNumber(MAX_ENCOUNTERS);
             LoadDoorData(doorData);
             LoadObjectData(nullptr, gameObjectData);
-            volkhanAchievement = false;
-            bjarngrimAchievement = false;
+            _volkhanAchievement = false;
+            _bjarngrimAchievement = false;
         };
 
         bool CheckAchievementCriteriaMeet(uint32 criteria_id, Player const*  /*source*/, Unit const*  /*target*/, uint32  /*miscvalue1*/) override
@@ -57,33 +55,25 @@ public:
             switch (criteria_id)
             {
                 case 7321: //Shatter Resistant (2042)
-                    return volkhanAchievement;
+                    return _volkhanAchievement;
                 case 6835: // Lightning Struck (1834)
-                    return bjarngrimAchievement;
+                    return _bjarngrimAchievement;
             }
             return false;
         }
 
         void SetData(uint32 uiType, uint32 uiData) override
         {
-            if (uiType == DATA_LOKEN_INTRO)
-                SaveToDB();
-
             // Achievements
             if (uiType == DATA_BJARNGRIM_ACHIEVEMENT)
-                bjarngrimAchievement = (bool)uiData;
+                _bjarngrimAchievement = (bool)uiData;
             else if (uiType == DATA_VOLKHAN_ACHIEVEMENT)
-                volkhanAchievement = (bool)uiData;
-
-            if (uiData != DONE)
-                return;
-
-            SaveToDB();
+                _volkhanAchievement = (bool)uiData;
         }
 
     private:
-        bool volkhanAchievement;
-        bool bjarngrimAchievement;
+        bool _volkhanAchievement;
+        bool _bjarngrimAchievement;
     };
 
     InstanceScript* GetInstanceScript(InstanceMap* pMap) const override
