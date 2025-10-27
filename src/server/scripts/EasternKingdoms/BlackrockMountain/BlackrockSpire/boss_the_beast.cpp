@@ -128,7 +128,7 @@ public:
 
             if (_beastReached)
             {
-                me->GetMotionMaster()->MovePath(BEAST_MOVEMENT_ID, true);
+                me->GetMotionMaster()->MoveWaypoint(BEAST_MOVEMENT_ID, true);
             }
         }
 
@@ -192,7 +192,7 @@ public:
                     if (!_beastReached)
                     {
                         _beastReached = true;
-                        me->GetMotionMaster()->MovePath(BEAST_MOVEMENT_ID, true);
+                        me->GetMotionMaster()->MoveWaypoint(BEAST_MOVEMENT_ID, true);
 
                         // There is a chance player logged in between areatriggers (realm crash or restart)
                         // executing part of script which happens when player enters boss room

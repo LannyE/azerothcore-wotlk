@@ -409,13 +409,13 @@ public:
                         case EVENT_PATH_NEFARIUS:
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                             {
-                                victor->GetMotionMaster()->MovePath(NEFARIUS_PATH_1, true);
+                                victor->GetMotionMaster()->MoveWaypoint(NEFARIUS_PATH_1, true);
                                 victor->AI()->Talk(SAY_NEFARIUS_6);
                             }
                             events.ScheduleEvent(EVENT_STOP_MOVEMENT_1, 12s);
                             break;
                         case EVENT_PATH_REND:
-                            me->GetMotionMaster()->MovePath(REND_PATH_1, false);
+                            me->GetMotionMaster()->MoveWaypoint(REND_PATH_1, false);
                             break;
                         case EVENT_TELEPORT_1:
                             me->NearTeleportTo(194.2993f, -474.0814f, 121.4505f, -0.01225555f);
