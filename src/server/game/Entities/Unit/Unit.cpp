@@ -14329,7 +14329,7 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
                 SendMessageToSet(&data, true);
 
                 data.Initialize(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA, 0);
-                player->GetSession()->SendPacket(&data);
+                player->SendDirectMessage(&data);
 
                 // mounts can also have accessories
                 GetVehicleKit()->InstallAllAccessories(false);
@@ -14357,7 +14357,7 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
         data << GetPackGUID();
         data << player->GetSession()->GetOrderCounter(); // movement counter
         data << player->GetCollisionHeight();
-        player->GetSession()->SendPacket(&data);
+        player->SendDirectMessage(&data);
         player->GetSession()->IncrementOrderCounter();
     }
 
@@ -14378,7 +14378,7 @@ void Unit::Dismount()
         data << GetPackGUID();
         data << player->GetSession()->GetOrderCounter(); // movement counter
         data << player->GetCollisionHeight();
-        player->GetSession()->SendPacket(&data);
+        player->SendDirectMessage(&data);
         player->GetSession()->IncrementOrderCounter();
     }
 
@@ -17748,7 +17748,7 @@ void Unit::SendPetActionFeedback(uint8 msg) const
 
     WorldPacket data(SMSG_PET_ACTION_FEEDBACK, 1);
     data << uint8(msg);
-    owner->ToPlayer()->GetSession()->SendPacket(&data);
+    owner->ToPlayer()->SendDirectMessage(&data);
 }
 
 void Unit::SendPetActionSound(PetAction action) const
@@ -17771,7 +17771,7 @@ void Unit::SendPetAIReaction(ObjectGuid guid) const
     WorldPacket data(SMSG_AI_REACTION, 8 + 4);
     data << guid;
     data << uint32(AI_REACTION_HOSTILE);
-    owner->ToPlayer()->GetSession()->SendPacket(&data);
+    owner->ToPlayer()->SendDirectMessage(&data);
 }
 
 ///----------End of Pet responses methods----------
@@ -17877,7 +17877,7 @@ void Unit::SetStandState(uint8 state)
     {
         WorldPacket data(SMSG_STANDSTATE_UPDATE, 1);
         data << (uint8)state;
-        ToPlayer()->GetSession()->SendPacket(&data);
+        ToPlayer()->SendDirectMessage(&data);
     }
 }
 
@@ -20501,7 +20501,7 @@ void Unit::KnockbackFrom(float x, float y, float speedXY, float speedZ)
         data << float(speedXY);                                 // Horizontal speed
         data << float(-speedZ);                                 // Z Movement speed (vertical)
 
-        player->GetSession()->SendPacket(&data);
+        player->SendDirectMessage(&data);
         player->GetSession()->IncrementOrderCounter();
 
         player->SetCanKnockback(true);
@@ -20784,7 +20784,7 @@ void Unit::JumpTo(float speedXY, float speedZ, bool forward)
         data << float(speedXY);                                 // Horizontal speed
         data << float(-speedZ);                                 // Z Movement speed (vertical)
 
-        ToPlayer()->GetSession()->SendPacket(&data);
+        ToPlayer()->SendDirectMessage(&data);
     }
 }
 
@@ -20942,7 +20942,7 @@ void Unit::_EnterVehicle(Vehicle* vehicle, int8 seatId, AuraApplication const* a
             bg->EventPlayerDroppedFlag(player);
 
         WorldPacket data(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA, 0);
-        player->GetSession()->SendPacket(&data);
+        player->SendDirectMessage(&data);
     }
 
     ASSERT(!m_vehicle);
@@ -21920,7 +21920,7 @@ void Unit::SetCanFly(bool enable)
             WorldPacket data(enable ? SMSG_MOVE_SET_CAN_FLY : SMSG_MOVE_UNSET_CAN_FLY, GetPackGUID().size() + 4);
             data << GetPackGUID();
             data << counter;
-            player->GetSession()->SendPacket(&data);
+            player->SendDirectMessage(&data);
             player->GetSession()->IncrementOrderCounter();
             return;
         }
@@ -21956,7 +21956,7 @@ void Unit::SetFeatherFall(bool enable)
 
             data << GetPackGUID();
             data << counter;
-            player->GetSession()->SendPacket(&data);
+            player->SendDirectMessage(&data);
             player->GetSession()->IncrementOrderCounter();
 
             // start fall from current height
@@ -22014,7 +22014,7 @@ void Unit::SetHover(bool enable)
 
             data << GetPackGUID();
             data << counter;
-            player->GetSession()->SendPacket(&data);
+            player->SendDirectMessage(&data);
             player->GetSession()->IncrementOrderCounter();
             return;
         }
@@ -22049,7 +22049,7 @@ void Unit::SetWaterWalking(bool enable)
             WorldPacket data(enable ? SMSG_MOVE_WATER_WALK : SMSG_MOVE_LAND_WALK, GetPackGUID().size() + 4);
             data << GetPackGUID();
             data << counter;
-            player->GetSession()->SendPacket(&data);
+            player->SendDirectMessage(&data);
             player->GetSession()->IncrementOrderCounter();
             return;
         }
