@@ -1837,16 +1837,13 @@ void GameObject::Use(Unit* user)
                     spellCaster = botOwner;
 
                     if (info->summoningRitual.animSpell)
-                    {
                         user->CastSpell(user, info->summoningRitual.animSpell, true);
-                        triggered = true;
-                    }
 
                     spellId = info->summoningRitual.spellId;
                     if (spellId == 62330)
                     {
                         spellId = 61993;
-                        triggered = true;
+                        triggeredFlags = TRIGGERED_FULL_MASK;
                     }
                     if (!info->summoningRitual.ritualPersistent)
                         SetLootState(GO_JUST_DEACTIVATED);
