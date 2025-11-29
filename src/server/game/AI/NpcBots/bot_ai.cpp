@@ -2582,7 +2582,7 @@ void bot_ai::SetStats(bool force)
     }
 
     atpower *= ap_mod;
-    me->SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, atpower);
+    me->SetStatFlatModifier(UNIT_MOD_ATTACK_POWER, BASE_VALUE, atpower);
 
     me->UpdateAttackPowerAndDamage();
     if (_botclass == BOT_CLASS_WARRIOR || _botclass == BOT_CLASS_HUNTER || _botclass == BOT_CLASS_ROGUE ||
@@ -2590,7 +2590,7 @@ void bot_ai::SetStats(bool force)
         _botclass == BOT_CLASS_DARK_RANGER || _botclass == BOT_CLASS_SEA_WITCH)
     {
         atpower += _getTotalBotStat(BOT_STAT_MOD_RANGED_ATTACK_POWER) * ap_mod;
-        me->SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, atpower);
+        me->SetStatFlatModifier(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, atpower);
         me->UpdateAttackPowerAndDamage(true);
     }
 
@@ -2668,7 +2668,7 @@ void bot_ai::SetStats(bool force)
     //Druid armor mods should not affect armor from weapons
     if (_botclass == BOT_CLASS_DRUID && _stats[BOT_SLOT_MAINHAND][BOT_STAT_MOD_ARMOR] != 0 && armor_mod > 1.f)
         value -= _stats[BOT_SLOT_MAINHAND][BOT_STAT_MOD_ARMOR] * (armor_mod - 1.f);
-    me->SetModifierValue(UNIT_MOD_ARMOR, BASE_VALUE, value);
+    me->SetStatFlatModifier(UNIT_MOD_ARMOR, BASE_VALUE, value);
     me->UpdateArmor(); //buffs will be processed here
 
     //RESISTANCES
@@ -7326,7 +7326,7 @@ void bot_ai::_OnHealthUpdate() const
         m_totalhp = (m_totalhp * (100 + bonuspct)) / 100;
 
     //m_totalhp = float(uint32(m_totalhp) - (uint32(m_totalhp) % 10));
-    me->SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, float(m_totalhp) * BotMgr::GetBotHPModByLevel(me->GetLevel())); //replaces base hp at max lvl
+    me->SetStatFlatModifier(UNIT_MOD_HEALTH, BASE_VALUE, float(m_totalhp) * BotMgr::GetBotHPModByLevel(me->GetLevel())); //replaces base hp at max lvl
     me->UpdateMaxHealth(); //will use our values we just set (update base health and buffs)
     //BOT_LOG_ERROR("entities.player", "overall hp: %u", me->GetMaxHealth());
     me->SetHealth(fullhp ? me->GetMaxHealth() : uint32(0.5f + float(me->GetMaxHealth()) * pct / 100.f)); //restore pct
@@ -7386,7 +7386,7 @@ void bot_ai::_OnManaUpdate() const
         m_basemana = (m_basemana * (100 + bonuspct)) / 100;
 
     //m_basemana = float(uint32(m_basemana) - (uint32(m_basemana) % 5));
-    me->SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, m_basemana * BotMgr::GetBotMPModByLevel(me->GetLevel()));
+    me->SetStatFlatModifier(UNIT_MOD_MANA, BASE_VALUE, m_basemana * BotMgr::GetBotMPModByLevel(me->GetLevel()));
     me->UpdateMaxPower(POWER_MANA);
     me->SetPower(POWER_MANA, fullmana ? me->GetMaxPower(POWER_MANA) :
         uint32(0.5f + float(me->GetMaxPower(POWER_MANA)) * pct / 100.f)); //restore pct

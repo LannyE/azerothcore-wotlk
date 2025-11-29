@@ -1258,8 +1258,7 @@ void Spell::SelectImplicitConeTargets(SpellEffIndex effIndex, SpellImplicitTarge
             if (uint32 maxTargets = m_spellValue->MaxAffectedTargets)
             {
                 maxTargets += m_caster->GetTotalAuraModifierByAffectMask(SPELL_AURA_MOD_MAX_AFFECTED_TARGETS, m_spellInfo);
-
-                 //npcbot - apply bot spell max targets mods
+                //npcbot - apply bot spell max targets mods
                 if (m_caster->IsNPCBot())
                     m_caster->ToCreature()->ApplyCreatureSpellMaxTargetsMods(m_spellInfo, maxTargets);
                 //end npcbot

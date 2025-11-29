@@ -22936,52 +22936,6 @@ void Unit::SetUInt32Value(uint16 index, uint32 value)
     }
 }
 
-//npcbot
-bool Unit::IsHighestExclusiveAuraEffect(SpellInfo const* spellInfo, AuraType auraType, int32 effectAmount, uint8 auraEffectMask, bool removeOtherAuraApplications /*= false*/)
-{
-    AuraEffectList const& auras = GetAuraEffectsByType(auraType);
-    for (Unit::AuraEffectList::const_iterator itr = auras.begin(); itr != auras.end();)
-    {
-        AuraEffect const* existingAurEff = (*itr);
-        ++itr;
-
-        if (sSpellMgr->CheckSpellGroupStackRules(spellInfo, existingAurEff->GetSpellInfo(), true, spellInfo->IsAffectingArea()) & SPELL_GROUP_STACK_FLAG_FORCED_STRONGEST)
-        {
-            int32 diff = abs(effectAmount) - abs(existingAurEff->GetAmount());
-            if (!diff)
-                for (int32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-                    diff += int32((auraEffectMask & (1 << i)) >> i) - int32((existingAurEff->GetBase()->GetEffectMask() & (1 << i)) >> i);
-
-            if (diff > 0)
-            {
-                Aura const* base = existingAurEff->GetBase();
-                // no removing of area auras from the original owner, as that completely cancels them
-                if (removeOtherAuraApplications && (!base->IsArea() || base->GetOwner() != this))
-                {
-                    if (AuraApplication* aurApp = existingAurEff->GetBase()->GetApplicationOfTarget(GetGUID()))
-                    {
-                        uint32 count = 0;
-                        uint8 index = 0;
-                        for (SpellEffectInfo const& spellEffectInfo : base->GetSpellInfo()->GetEffects())
-                            if (base->HasEffect(index++) && spellEffectInfo.ApplyAuraName == auraType)
-                                ++count;
-                        bool hasMoreThanOneEffect = count > 1;
-                        uint32 removedAuras = m_removedAurasCount;
-                        RemoveAura(aurApp);
-                        if (hasMoreThanOneEffect || m_removedAurasCount > removedAuras + 1)
-                            itr = auras.begin();
-                    }
-                }
-            }
-            else if (diff < 0)
-                return false;
-        }
-    }
-
-    return true;
-}
-//end npcbot
-
 std::string Unit::GetDebugInfo() const
 {
     std::stringstream sstr;

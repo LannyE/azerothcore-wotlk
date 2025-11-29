@@ -2084,11 +2084,6 @@ public:
 
     void SendTeleportPacket(Position& pos);
 
-    //npcbot: TC method transfer
-    bool IsHighestExclusiveAuraEffect(SpellInfo const* spellInfo, AuraType auraType, int32 effectAmount, uint8 auraEffectMask, bool removeOtherAuraApplications = false);
-    //end npcbot
-
-
     void SendMovementFlagUpdate(bool self = false);
     void SendMovementWaterWalking(Player* sendTo);
     void SendMovementFeatherFall(Player* sendTo);

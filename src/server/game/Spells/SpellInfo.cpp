@@ -457,7 +457,7 @@ int32 SpellEffectInfo::CalcValue(Unit const* caster, int32 const* bp, Unit const
     {
         //npcbot: Life Burst heal tempfix 2013
         float pointsPerComboPoint = PointsPerComboPoint;
-        if (_spellInfo->Id == 57143 && _effIndex == EFFECT_1)
+        if (_spellInfo->Id == 57143 && EffectIndex == EFFECT_1)
         {
             basePoints = 2500;
             value = float(basePoints);
@@ -566,7 +566,7 @@ float SpellEffectInfo::CalcValueMultiplier(Unit* caster, Spell* spell) const
 
     //npcbot - apply bot spell effect value mult mods
     if (caster && caster->IsNPCBot())
-        BotMgr::ApplyBotEffectValueMultiplierMods(caster->ToCreature(), _spellInfo, SpellEffIndex(_effIndex), multiplier);
+        BotMgr::ApplyBotEffectValueMultiplierMods(caster->ToCreature(), _spellInfo, SpellEffIndex(EffectIndex), multiplier);
     //end npcbot
 
     return multiplier;
