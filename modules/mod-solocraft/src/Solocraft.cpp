@@ -580,7 +580,7 @@ private:
         if (scp.stats_mult != 0.0f)
         {
             for (uint8 stat : cit->second)
-                unit->HandleStatModifier(UnitMods(UNIT_MOD_STAT_START + stat), TOTAL_PCT, scp.stats_mult, false);
+                unit->ApplyStatPctModifier(UnitMods(UNIT_MOD_STAT_START + stat), TOTAL_PCT, 100.f / (1.f + scp.stats_mult / 100.f) - 100.f);
         }
 
         // Apply new buffs
@@ -590,7 +590,7 @@ private:
         if (scp.stats_mult != 0.0f)
         {
             for (uint8 stat : cit->second)
-                unit->HandleStatModifier(UnitMods(UNIT_MOD_STAT_START + stat), TOTAL_PCT, scp.stats_mult, true);
+                unit->ApplyStatPctModifier(UnitMods(UNIT_MOD_STAT_START + stat), TOTAL_PCT, scp.stats_mult);
         }
         if (Aura* craura = EnsureAura(unit, SPELL_CRIT_PCT_BONUS))
         {
@@ -661,7 +661,7 @@ private:
         if (scp.stats_mult != 0.0f)
         {
             for (uint8 stat : cit->second)
-                unit->HandleStatModifier(UnitMods(UNIT_MOD_STAT_START + stat), TOTAL_PCT, scp.stats_mult, false);
+                unit->ApplyStatPctModifier(UnitMods(UNIT_MOD_STAT_START + stat), TOTAL_PCT, 100.f / (1.f + scp.stats_mult / 100.f) - 100.f);
         }
         EnsureUnAura(unit, SPELL_CRIT_PCT_BONUS);
         EnsureUnAura(unit, SPELL_DEFENSE_BONUS);
