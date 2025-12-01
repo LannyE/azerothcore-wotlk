@@ -219,9 +219,7 @@ enum WeaponAttackType : uint8
     MAX_ATTACK
 };
 
-//NPCBot
 enum CombatRating : uint8
-//End NPCBot
 {
     CR_WEAPON_SKILL             = 0,
     CR_DEFENSE_SKILL            = 1,
