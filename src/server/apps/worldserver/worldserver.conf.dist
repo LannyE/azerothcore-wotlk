@@ -681,8 +681,8 @@ Appender.Server=2,5,0,Server.log,w
 # Appender.GM=2,5,15,gm_%s.log
 Appender.Errors=2,2,0,Errors.log,w
 # Appender.DB=3,5,0
-Appender.NpcBots=1,2,0
 # Appender.Dev=2,5,0,Dev.log,a
+Appender.NpcBots=1,2,0
 
 #  Logger config values: Given a logger "name"
 #    Logger.name
