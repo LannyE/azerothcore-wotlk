@@ -1324,7 +1324,7 @@ void BotDataMgr::LoadWanderMap(bool reload, bool force_all_maps)
     BOT_LOG_INFO("server.loading", "Setting up wander map...");
 
     //                                             0  1     2 3 4 5 6      7      8        9        10    11   12
-    QueryResult wres = WorldDatabase.Query("SELECT id,mapid,x,y,z,o,zoneId,areaId,minlevel,maxlevel,flags,name,links FROM creature_template_npcbot_wander_nodes ORDER BY mapid,id");
+    QueryResult wres = WorldDatabase.Query("SELECT id,mapid,x,y,z,o,zoneId,areaId,minlevel,maxlevel,flags,name,links,minwaittime,maxwaittime,proximity FROM creature_template_npcbot_wander_nodes ORDER BY mapid,id");
     if (!wres)
     {
         BOT_LOG_FATAL("server.loading", "Failed to load wander points: table `creature_template_npcbot_wander_nodes` is empty!");
@@ -1364,6 +1364,9 @@ void BotDataMgr::LoadWanderMap(bool reload, bool force_all_maps)
         uint32 flags          = fields[++index].Get<uint32>();
         std::string name      = fields[++index].Get<std::string>();
         std::string_view lstr = fields[++index].Get<std::string_view>();
+        uint32 minwaittime    = fields[++index].Get<uint32>();
+        uint32 maxwaittime    = fields[++index].Get<uint32>();
+        float proximity       = fields[++index].Get<float>();
 
         WanderNode::nextWPId = std::max<uint32>(WanderNode::nextWPId, id);
 
@@ -1432,6 +1435,8 @@ void BotDataMgr::LoadWanderMap(bool reload, bool force_all_maps)
         WanderNode* wp = new WanderNode(id, mapId, x, y, z, o, zoneId, areaId, name);
         wp->SetLevels(minLevel, maxLevel);
         wp->SetFlags(BotWPFlags(flags));
+        wp->SetWaitTime(minwaittime, maxwaittime);
+        wp->SetProximity(proximity);
 
         if (wp->HasFlag(BotWPFlags::BOTWP_FLAG_SPAWN) && !lstr.empty())
             all_spawn_nodes.push_back(wp);
@@ -2665,7 +2670,7 @@ void BotDataMgr::UpdateNpcBotData(uint32 entry, NpcBotDataUpdateType updateType,
             if (itr->second->owner == *(uint32*)(data))
                 break;
             itr->second->owner = *(uint32*)(data);
-            itr->second->hire_time = itr->second->owner ? uint64(time(0)) : 1ULL;
+            itr->second->hire_time = itr->second->owner ? uint64(std::time(0)) : 1ULL;
             bstmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_NPCBOT_OWNER);
             //"UPDATE characters_npcbot SET owner = ?, hire_time = FROM_UNIXTIME(?) WHERE entry = ?", CONNECTION_ASYNC
             bstmt->SetData(0, itr->second->owner);
@@ -2864,7 +2869,7 @@ void BotDataMgr::UpdateNpcBotDataAll(uint32 playerGuid, NpcBotDataUpdateType upd
         CharacterDatabase.CommitTransaction(trans);
 }
 
-void BotDataMgr::SaveNpcBotStats(NpcBotStats const* stats)
+void BotDataMgr::SaveNpcBotStats(NpcBotStats const& stats)
 {
     CharacterDatabasePreparedStatement* bstmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_NPCBOT_STATS);
     //"REPLACE INTO characters_npcbot_stats
@@ -2874,33 +2879,33 @@ void BotDataMgr::SaveNpcBotStats(NpcBotStats const* stats)
     //(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC
 
     uint32 index = 0;
-    bstmt->SetData(  index, stats->entry);
-    bstmt->SetData(++index, stats->maxhealth);
-    bstmt->SetData(++index, stats->maxpower);
-    bstmt->SetData(++index, stats->strength);
-    bstmt->SetData(++index, stats->agility);
-    bstmt->SetData(++index, stats->stamina);
-    bstmt->SetData(++index, stats->intellect);
-    bstmt->SetData(++index, stats->spirit);
-    bstmt->SetData(++index, stats->armor);
-    bstmt->SetData(++index, stats->defense);
-    bstmt->SetData(++index, stats->resHoly);
-    bstmt->SetData(++index, stats->resFire);
-    bstmt->SetData(++index, stats->resNature);
-    bstmt->SetData(++index, stats->resFrost);
-    bstmt->SetData(++index, stats->resShadow);
-    bstmt->SetData(++index, stats->resArcane);
-    bstmt->SetData(++index, stats->blockPct);
-    bstmt->SetData(++index, stats->dodgePct);
-    bstmt->SetData(++index, stats->parryPct);
-    bstmt->SetData(++index, stats->critPct);
-    bstmt->SetData(++index, stats->attackPower);
-    bstmt->SetData(++index, stats->spellPower);
-    bstmt->SetData(++index, stats->spellPen);
-    bstmt->SetData(++index, stats->hastePct);
-    bstmt->SetData(++index, stats->hitBonusPct);
-    bstmt->SetData(++index, stats->expertise);
-    bstmt->SetData(++index, stats->armorPenPct);
+    bstmt->SetData(  index, stats.entry);
+    bstmt->SetData(++index, stats.maxhealth);
+    bstmt->SetData(++index, stats.maxpower);
+    bstmt->SetData(++index, stats.strength);
+    bstmt->SetData(++index, stats.agility);
+    bstmt->SetData(++index, stats.stamina);
+    bstmt->SetData(++index, stats.intellect);
+    bstmt->SetData(++index, stats.spirit);
+    bstmt->SetData(++index, stats.armor);
+    bstmt->SetData(++index, stats.defense);
+    bstmt->SetData(++index, stats.resHoly);
+    bstmt->SetData(++index, stats.resFire);
+    bstmt->SetData(++index, stats.resNature);
+    bstmt->SetData(++index, stats.resFrost);
+    bstmt->SetData(++index, stats.resShadow);
+    bstmt->SetData(++index, stats.resArcane);
+    bstmt->SetData(++index, stats.blockPct);
+    bstmt->SetData(++index, stats.dodgePct);
+    bstmt->SetData(++index, stats.parryPct);
+    bstmt->SetData(++index, stats.critPct);
+    bstmt->SetData(++index, stats.attackPower);
+    bstmt->SetData(++index, stats.spellPower);
+    bstmt->SetData(++index, stats.spellPen);
+    bstmt->SetData(++index, stats.hastePct);
+    bstmt->SetData(++index, stats.hitBonusPct);
+    bstmt->SetData(++index, stats.expertise);
+    bstmt->SetData(++index, stats.armorPenPct);
 
     CharacterDatabase.Execute(bstmt);
 }

@@ -2047,7 +2047,7 @@ public:
         if (file_str->find('.') == std::string::npos)
             *file_str += ".sql";
 
-        switch (NPCBotsDump().Load(*file_str))
+        switch (NPCBotsDump{}.Load(*file_str))
         {
             case BOT_DUMP_SUCCESS:
                 handler->SendSysMessage("Import successful.");
@@ -2088,7 +2088,7 @@ public:
         if (file_str->find('.') == std::string::npos)
             *file_str += ".sql";
 
-        switch (NPCBotsDump().Write(*file_str))
+        switch (NPCBotsDump{}.Write(*file_str))
         {
             case BOT_DUMP_SUCCESS:
                 handler->SendSysMessage("Export successful.");
@@ -3274,8 +3274,6 @@ public:
         }
 
         BotDataMgr::UpdateNpcBotData(bot->GetEntry(), NPCBOT_UPDATE_OWNER, &guidlow);
-        bot->GetBotAI()->ReinitOwner();
-        //bot->GetBotAI()->Reset();
 
         handler->PSendSysMessage("{}'s new owner is {} (guidlow: {})", bot->GetName(), characterName, guidlow);
         return true;
@@ -5056,7 +5054,6 @@ public:
 
         ObjectGuid::LowType guidlow = owner->GetGUID().GetCounter();
         BotDataMgr::UpdateNpcBotData(bot->GetEntry(), NPCBOT_UPDATE_OWNER, &guidlow);
-        bot->GetBotAI()->ReinitOwner();
 
         if (owner->GetBotMgr()->AddBot(bot) == BOT_ADD_SUCCESS)
         {
