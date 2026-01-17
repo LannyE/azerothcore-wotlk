@@ -119,6 +119,8 @@ class bot_ai : public CreatureAI
 
         EventProcessor* GetEvents() { return &Events; }
         ObjectGuid::LowType GetBotOwnerGuid() const;
+        bool HasSharedOwner(ObjectGuid::LowType guid_low) const;
+        bool HasOwner(ObjectGuid::LowType guid_low) const;
         Player* GetBotOwner() const { return master; }
         bool SetBotOwner(Player* newowner);
         void CheckOwnerExpiry();
@@ -228,6 +230,7 @@ class bot_ai : public CreatureAI
         uint8 GetPlayerRace() const;
 
         bool IsTempBot() const;
+        bool IsSharedBot() const;
         bool CanAppearInWorld() const;
 
         void SetShouldUpdateStats() { shouldUpdateStats = true; }
