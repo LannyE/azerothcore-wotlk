@@ -116,6 +116,7 @@ namespace Movement
         [[nodiscard]] bool Finalized() const { return splineflags.done; }
         [[nodiscard]] bool isCyclic() const { return splineflags.cyclic; }
         [[nodiscard]] bool isFalling() const { return splineflags.falling; }
+        [[nodiscard]] bool isWalking() const { return splineflags.walkmode; } //Lanny Fix SMART_ACTION_FOLLOW broken on 1-16-26 by commit 24410
         [[nodiscard]] bool isBoarding() const { return splineflags.transportEnter || splineflags.transportExit; }
         [[nodiscard]] Vector3 FinalDestination() const { return Initialized() ? spline.getPoint(spline.last()) : Vector3(); }
         [[nodiscard]] Vector3 CurrentDestination() const { return Initialized() ? spline.getPoint(point_Idx + 1) : Vector3(); }

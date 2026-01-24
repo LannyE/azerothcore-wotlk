@@ -459,7 +459,7 @@ static Optional<float> GetVelocity(Unit* owner, Unit* target, G3D::Vector3 const
         (owner->IsPet() || owner->IsGuardian() || owner->GetGUID() == target->GetCritterGUID() || owner->GetCharmerOrOwnerGUID() == target->GetGUID()))
     {
         uint32 moveFlags = target->GetUnitMovementFlags();
-        if (target->IsWalking())
+        if (target->IsWalking() || target->movespline->isWalking()) //Lanny Fix SMART_ACTION_FOLLOW broken on 1-16-26 by commit 24410
         {
             moveFlags |= MOVEMENTFLAG_WALKING;
         }
@@ -658,7 +658,7 @@ bool FollowMovementGenerator<T>::DoUpdate(T* owner, uint32 time_diff)
         Movement::MoveSplineInit init(owner);
         init.MovebyPath(i_path->GetPath());
         if (_inheritWalkState)
-            init.SetWalk(target->IsWalking());
+            init.SetWalk(target->IsWalking() || target->movespline->isWalking()); //Lanny Fix SMART_ACTION_FOLLOW broken on 1-16-26 by commit 24410
 
         if (_inheritSpeed)
             if (Optional<float> velocity = GetVelocity(owner, target, i_path->GetActualEndPosition(), owner->IsGuardian()))

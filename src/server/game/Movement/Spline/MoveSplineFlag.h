@@ -40,6 +40,7 @@ namespace Movement
             Falling             = 0x00000200,           // Affects elevation computation, can't be combined with Parabolic flag
             No_Spline           = 0x00000400,
             Parabolic           = 0x00000800,           // Affects elevation computation, can't be combined with Falling flag
+            Walkmode            = 0x00001000,            //Lanny Fix SMART_ACTION_FOLLOW broken on 1-16-26 by commit 24410
             CanSwim             = 0x00001000,
             Flying              = 0x00002000,           // Smooth movement(Catmullrom interpolation mode), flying animation
             OrientationFixed    = 0x00004000,           // Model orientation fixed
@@ -117,6 +118,7 @@ namespace Movement
         bool falling             : 1;
         bool no_spline           : 1;
         bool parabolic           : 1;
+        bool walkmode            : 1;            //Lanny Fix SMART_ACTION_FOLLOW broken on 1-16-26 by commit 24410
         bool canSwim             : 1;
         bool flying              : 1;
         bool orientationFixed    : 1;
