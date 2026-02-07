@@ -139,7 +139,7 @@ namespace Movement
         STR(Unk10              ),
     };
 
-    char const* g_SplineFlag_names[33] =           //Lanny Fix SMART_ACTION_FOLLOW broken on 1-16-26 by commit 24410 - [32]
+    char const* g_SplineFlag_names[32] =
     {
         STR(AnimBit1     ), // 0x00000001,
         STR(AnimBit2     ), // 0x00000002,
@@ -153,7 +153,6 @@ namespace Movement
         STR(Falling      ), // 0x00000200,           // Not Compartible With Trajectory Movement
         STR(No_Spline    ), // 0x00000400,
         STR(Trajectory   ), // 0x00000800,           // Not Compartible With Fall Movement
-        STR(Walkmode     ), // 0x00001000,           //Lanny Fix SMART_ACTION_FOLLOW broken on 1-16-26 by commit 24410
         STR(CanSwim      ), // 0x00001000,
         STR(Flying       ), // 0x00002000,           // Smooth Movement(Catmullrom Interpolation Mode), Flying Animation
         STR(Knockback    ), // 0x00004000,           // Model Orientation Fixed
