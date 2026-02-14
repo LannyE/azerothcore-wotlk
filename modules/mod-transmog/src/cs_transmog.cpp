@@ -22,6 +22,7 @@
 #include "Transmogrification.h"
 #include "Tokenize.h"
 #include "DatabaseEnv.h"
+#include "SpellMgr.h"
 
 using namespace Acore::ChatCommands;
 
@@ -40,11 +41,12 @@ public:
 
         static ChatCommandTable transmogTable =
         {
-            { "add",       addCollectionTable                                        },
-            { "",          HandleDisableTransMogVisual,   SEC_PLAYER,    Console::No },
-            { "sync",      HandleSyncTransMogCommand,     SEC_PLAYER,    Console::No },
-            { "portable",  HandleTransmogPortableCommand, SEC_PLAYER,    Console::No },
-            { "interface", HandleInterfaceOption,         SEC_PLAYER,    Console::No }
+            { "add",       addCollectionTable                                            },
+            { "",          HandleDisableTransMogVisual,   SEC_PLAYER,        Console::No },
+            { "sync",      HandleSyncTransMogCommand,     SEC_PLAYER,        Console::No },
+            { "portable",  HandleTransmogPortableCommand, SEC_PLAYER,        Console::No },
+            { "interface", HandleInterfaceOption,         SEC_PLAYER,        Console::No },
+            { "reload",    HandleReloadTransmogConfig,    SEC_ADMINISTRATOR, Console::Yes}
         };
 
         static ChatCommandTable commandTable =
@@ -280,27 +282,31 @@ public:
     {
         if (!sTransmogrification->IsPortableNPCEnabled)
         {
-            handler->GetPlayer()->SendSystemMessage("The portable transmogrification NPC is disabled.");
-            handler->SetSentErrorMessage(true);
+            handler->SendErrorMessage("The portable transmogrification NPC is disabled.");
             return true;
         }
 
-        if (Player* player = PlayerIdentifier::FromSelf(handler)->GetConnectedPlayer())
+        if (!sTransmogrification->IsTransmogPlusEnabled)
         {
-
-            if (sTransmogrification->IsTransmogPlusEnabled)
-                if (sTransmogrification->IsPlusFeatureEligible(player->GetGUID(), PLUS_FEATURE_PET))
-                {
-                    player->CastSpell((Unit*)nullptr, sTransmogrification->PetSpellId, true);
-                    return true;
-                }
-
-            if (player->GetSession()->GetSecurity() < SEC_MODERATOR)
-                return true;
-
-            player->CastSpell((Unit*)nullptr, sTransmogrification->PetSpellId, true);
+            handler->SendErrorMessage("The portable transmogrification NPC is a plus feature. Plus features are currently disabled.");
+            return true;
         }
 
+        Player* player = PlayerIdentifier::FromSelf(handler)->GetConnectedPlayer();
+
+        if (!sTransmogrification->IsPlusFeatureEligible(player->GetGUID(), PLUS_FEATURE_PET))
+        {
+            handler->SendErrorMessage("You are not eligible for the portable transmogrification NPC. Please check your subscription level.");
+            return true;
+        }
+
+        if (!sSpellMgr->GetSpellInfo(sTransmogrification->PetSpellId))
+        {
+            handler->SendErrorMessage("The portable transmogrification NPC spell is not available.");
+            return true;
+        }
+
+        player->CastSpell((Unit*)nullptr, sTransmogrification->PetSpellId, true);
         return true;
     };
 
@@ -308,6 +314,15 @@ public:
     {
         handler->GetPlayer()->UpdatePlayerSetting("mod-transmog", SETTING_VENDOR_INTERFACE, enable);
         handler->SendSysMessage(enable ? LANG_CMD_TRANSMOG_VENDOR_INTERFACE_ENABLE : LANG_CMD_TRANSMOG_VENDOR_INTERFACE_DISABLE);
+        return true;
+    }
+
+    static bool HandleReloadTransmogConfig(ChatHandler* handler)
+    {
+        sTransmogrification->LoadConfig(true);
+        handler->SendSysMessage("Transmog configs reloaded.");
+        sTransmogrification->LoadCollections();
+        handler->SendSysMessage("Transmog collections reloaded.");
         return true;
     }
 };
