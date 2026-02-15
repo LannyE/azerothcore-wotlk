@@ -134,17 +134,6 @@ namespace Movement
         // limit the speed in the same way the client does
         args.velocity = std::min(args.velocity, args.flags.catmullrom || args.flags.flying ? 50.0f : std::max(28.0f, unit->GetSpeed(MOVE_RUN) * 4.0f));
 
-        //Lanny
-        // Force Follower Velocity to Walk Speed to stop the "Run-Stop" stutter introduced in commit #24410
-        // without adding the WALKING flag to moveFlags, preserving Stealthed creatures over 2 levels higher coming out of stealth when attacking which was a bug from any fixes to this.
-        if (unit->GetMotionMaster()->GetCurrentMovementGeneratorType() == FOLLOW_MOTION_TYPE && !unit->IsInCombat())
-        {
-            args.velocity = unit->GetSpeed(MOVE_WALK);
-            // We do NOT set args.walk = true here because we want moveFlags 
-            // to remain clean of the walk bit for the client-side stealth check.
-        }
-        //End Lanny
-
         if (!args.Validate(unit))
             return 0;
 
