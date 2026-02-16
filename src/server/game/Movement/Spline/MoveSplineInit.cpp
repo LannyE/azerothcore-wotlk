@@ -134,6 +134,26 @@ namespace Movement
         // limit the speed in the same way the client does
         args.velocity = std::min(args.velocity, args.flags.catmullrom || args.flags.flying ? 50.0f : std::max(28.0f, unit->GetSpeed(MOVE_RUN) * 4.0f));
 
+        // Lanny - Fix for SMART_ACTION_FOLLOW Stutter & Turn Issue
+        if (unit->GetMotionMaster()->GetCurrentMovementGeneratorType() == FOLLOW_MOTION_TYPE && !unit->IsInCombat())
+        {
+            if (args.path.size() >= 2)
+            {
+                float dx = args.path[0].x - args.path.back().x;
+                float dy = args.path[0].y - args.path.back().y;
+                float dz = args.path[0].z - args.path.back().z;
+                float stepDist = sqrt(dx * dx + dy * dy + dz * dz);
+
+                // If the move is a micro-adjustment (< 3.0 yards), force WALK
+                if (stepDist < 3.0f)
+                {
+                    args.velocity = unit->GetSpeed(MOVE_WALK);
+                    args.walk = true; // Fixed: Use the new .walk boolean from the commit
+                }
+            }
+        }
+        // End Lanny
+
         if (!args.Validate(unit))
             return 0;
 
