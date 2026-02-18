@@ -1343,16 +1343,23 @@ class spell_hun_thrill_of_the_hunt : public AuraScript
             return;
 
         Unit* caster = GetTarget();
-        if (!caster->IsPlayer())
+        //npcbot: Allow NPCBots to proc this
+        //if (!caster->IsPlayer())
+        if (!caster->IsPlayer() && !caster->IsNPCBot())
             return;
 
         int32 mana = 0;
+        Player* player = caster->ToPlayer();
+        //npcbot
+        //Spell* spell = caster->ToPlayer()->m_spellModTakingSpell;
+        Spell* spell = player ? player->m_spellModTakingSpell : nullptr;
 
-        Spell* spell = caster->ToPlayer()->m_spellModTakingSpell;
-
-        // Disable charge drop because of Lock and Load
-        if (spell)
-            caster->ToPlayer()->SetSpellModTakingSpell(spell, false);
+        // Disable charge drop because of Lock and Load (Players only)
+        //if (spell)
+        //    caster->ToPlayer()->SetSpellModTakingSpell(spell, false);
+        if (spell && player)
+            player->SetSpellModTakingSpell(spell, false);
+        //end npcbot
 
         // Explosive Shot
         if (procSpell->SpellFamilyFlags[2] & 0x200)
@@ -1360,18 +1367,27 @@ class spell_hun_thrill_of_the_hunt : public AuraScript
             Unit* victim = eventInfo.GetActionTarget();
             if (!victim)
             {
-                if (spell)
-                    caster->ToPlayer()->SetSpellModTakingSpell(spell, true);
+                //npcbot
+                //if (spell)
+                //    caster->ToPlayer()->SetSpellModTakingSpell(spell, true);
+                if (spell && player)
+                    player->SetSpellModTakingSpell(spell, true);
                 return;
             }
+            // This aura check and math matches your original bot logic
             if (AuraEffect const* pEff = victim->GetAuraEffect(SPELL_AURA_PERIODIC_DUMMY, SPELLFAMILY_HUNTER, 0x0, 0x80000000, 0x0, caster->GetGUID()))
                 mana = pEff->GetSpellInfo()->CalcPowerCost(caster, SpellSchoolMask(pEff->GetSpellInfo()->SchoolMask)) * 4 / 10 / 3;
+            //end npcbot
         }
         else
             mana = procSpell->CalcPowerCost(caster, SpellSchoolMask(procSpell->SchoolMask)) * 4 / 10;
 
-        if (spell)
-            caster->ToPlayer()->SetSpellModTakingSpell(spell, true);
+        //npcbot Re-enable spell mod (Players only)
+        //if (spell)
+        //    caster->ToPlayer()->SetSpellModTakingSpell(spell, true);
+        if (spell && player)
+            player->SetSpellModTakingSpell(spell, true);
+        //end npcbot
 
         if (mana <= 0)
             return;
