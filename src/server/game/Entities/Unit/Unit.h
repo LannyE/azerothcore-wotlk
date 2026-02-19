@@ -386,7 +386,7 @@ public:
     [[nodiscard]] uint32 GetUnmitigatedDamage() const;
 
     //npcbot
-    [[nodiscard]] uint32 GetHitMask() const { return m_procEx; }
+    [[nodiscard]] uint32 GetBotHitMask() const { return m_procEx; }
     //end npcbot
 };
 
@@ -503,6 +503,7 @@ struct CalcDamageInfo
     WeaponAttackType attackType; //
     uint32 procAttacker;
     uint32 procVictim;
+    uint32 procEx;               //npcbot
     uint32 cleanDamage;          // Used only for rage calculation
     MeleeHitOutcome hitOutCome;  /// @todo: remove this field (need use TargetState)
 };

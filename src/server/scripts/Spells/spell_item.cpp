@@ -28,6 +28,12 @@
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
 #include "WorldSession.h"
+
+//npcbot
+#include "botdatamgr.h"
+#include "botmgr.h"
+//end npcbot
+
 /*
  * Scripts for spells with SPELLFAMILY_GENERIC spells used by items.
  * Ordered alphabetically using scriptname.

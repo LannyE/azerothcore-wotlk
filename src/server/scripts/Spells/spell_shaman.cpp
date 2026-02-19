@@ -1600,12 +1600,16 @@ class spell_sha_flametongue_weapon : public AuraScript
         //if (!item || !item->IsEquipped())
         //    return false;
 
-        Item* item = eventInfo.GetCastItem();
-        if (!item && actor->IsPlayer())
-            item = actor->ToPlayer()->GetItemByGuid(GetAura()->GetCastItemGUID());
+        ObjectGuid itemGuid = GetAura()->GetCastItemGUID();
+        Item* item = nullptr;
 
-        if (!item || (actor->IsPlayer() && !item->IsEquipped()))
-            return false;
+        if (actor->IsPlayer())
+            item = actor->ToPlayer()->GetItemByGuid(itemGuid);
+        else if (actor->IsNPCBot())
+            item = actor->ToCreature()->GetBotEquipsByGuid(itemGuid);
+
+        if (!item)
+            return false; // Use 'return false;' if this is inside CheckProc (a bool function)
 
         //WeaponAttackType attType = Player::GetAttackBySlot(item->GetSlot());
         //if (attType != BASE_ATTACK && attType != OFF_ATTACK)
@@ -1653,14 +1657,13 @@ class spell_sha_flametongue_weapon : public AuraScript
         //    return;
 
         // npcbot: Item detection for both players and bots
-        Item* item = eventInfo.GetCastItem();
-        if (!item)
-        {
-            if (actor->IsPlayer())
-                item = actor->ToPlayer()->GetWeaponForAttack(attType);
-            else if (actor->IsNPCBot())
-                item = actor->ToCreature()->GetBotEquips(attType == BASE_ATTACK ? 0 : 1);
-        }
+        ObjectGuid itemGuid = GetAura()->GetCastItemGUID();
+        Item* item = nullptr;
+
+        if (actor->IsPlayer())
+            item = actor->ToPlayer()->GetWeaponForAttack(attType);
+        else if (actor->IsNPCBot())
+            item = actor->ToCreature()->GetBotEquipsByGuid(itemGuid);
 
         if (!item) return;
 
@@ -2234,12 +2237,16 @@ class spell_sha_windfury_weapon : public AuraScript
         //    return false;
 
         // Get the item responsible for the proc
-        Item* item = eventInfo.GetCastItem();
-        if (!item && actor->IsPlayer())
-            item = actor->ToPlayer()->GetItemByGuid(GetAura()->GetCastItemGUID());
+        ObjectGuid itemGuid = GetAura()->GetCastItemGUID();
+        Item* item = nullptr;
 
-        if (!item || (actor->IsPlayer() && !item->IsEquipped()))
-            return false;
+        if (actor->IsPlayer())
+            item = actor->ToPlayer()->GetItemByGuid(itemGuid);
+        else if (actor->IsNPCBot())
+            item = actor->ToCreature()->GetBotEquipsByGuid(itemGuid);
+
+        if (!item)
+            return false; // Use 'return false;' if this is inside CheckProc (a bool function)
 		
         //WeaponAttackType attType = Player::GetAttackBySlot(item->GetSlot());
         //if (attType != BASE_ATTACK && attType != OFF_ATTACK)
@@ -2283,10 +2290,16 @@ class spell_sha_windfury_weapon : public AuraScript
         //if (!item)
         //    return;
 
-        Item* item = eventInfo.GetCastItem();
-        if (!item && actor->IsPlayer())
-            item = actor->ToPlayer()->GetItemByGuid(GetAura()->GetCastItemGUID());
-        if (!item) return;
+        ObjectGuid itemGuid = GetAura()->GetCastItemGUID();
+        Item* item = nullptr;
+
+        if (actor->IsPlayer())
+            item = actor->ToPlayer()->GetItemByGuid(itemGuid);
+        else if (actor->IsNPCBot())
+            item = actor->ToCreature()->GetBotEquipsByGuid(itemGuid);
+
+        if (!item)
+            return;
 
         //uint8 slot = item->GetSlot();
         //bool mainHand = slot == EQUIPMENT_SLOT_MAINHAND;
@@ -2323,6 +2336,9 @@ class spell_sha_windfury_weapon : public AuraScript
         //int32 bonus = windfurySpellInfo ? windfurySpellInfo->Effects[EFFECT_1].CalcValue(player) : 0;
         //bonus = int32(bonus * player->GetAttackTime(mainHand ? BASE_ATTACK : OFF_ATTACK) / 1000.f);
 
+        // Calculation is now unified for both types
+        int32 bonus = spellInfo ? spellInfo->Effects[EFFECT_1].CalcValue(actor) : 0;
+        bonus = int32(bonus * actor->GetAttackTime(mainHand ? BASE_ATTACK : OFF_ATTACK) / 1000.f);
 
         //player->CastCustomSpell(spellId, SPELLVALUE_BASE_POINT0, bonus, target, true, item, aurEff);
         //player->CastCustomSpell(spellId, SPELLVALUE_BASE_POINT0, bonus, target, true, item, aurEff);
