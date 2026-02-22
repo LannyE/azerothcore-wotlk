@@ -1586,92 +1586,43 @@ class spell_sha_flametongue_weapon : public AuraScript
 
     bool CheckProc(ProcEventInfo& eventInfo)
     {
-        //npcbot
-        //Player* player = eventInfo.GetActor()->ToPlayer();
-        //if (!player)
-        //    return false;
-
-        Unit* actor = eventInfo.GetActor();
-        // npcbot: Allow NPCBots to pass this check
-        if (!actor->IsPlayer() && !actor->IsNPCBot())
+        Player* player = eventInfo.GetActor()->ToPlayer();
+        if (!player)
             return false;
 
-        //Item* item = player->GetItemByGuid(GetAura()->GetCastItemGUID());
-        //if (!item || !item->IsEquipped())
-        //    return false;
+        Item* item = player->GetItemByGuid(GetAura()->GetCastItemGUID());
+        if (!item || !item->IsEquipped())
+            return false;
 
-        ObjectGuid itemGuid = GetAura()->GetCastItemGUID();
-        Item* item = nullptr;
-
-        if (actor->IsPlayer())
-            item = actor->ToPlayer()->GetItemByGuid(itemGuid);
-        else if (actor->IsNPCBot())
-            item = actor->ToCreature()->GetBotEquipsByGuid(itemGuid);
-
-        if (!item)
-            return false; // Use 'return false;' if this is inside CheckProc (a bool function)
-
-        //WeaponAttackType attType = Player::GetAttackBySlot(item->GetSlot());
-        //if (attType != BASE_ATTACK && attType != OFF_ATTACK)
-        //    return false;
-
-        // npcbot: Handle attack type detection for bots
-        WeaponAttackType attType = (actor->IsNPCBot()) ? 
-            (actor->ToCreature()->GetBotEquips(0) == item ? BASE_ATTACK : OFF_ATTACK) : 
-            Player::GetAttackBySlot(item->GetSlot());
-
+        WeaponAttackType attType = Player::GetAttackBySlot(item->GetSlot());
         if (attType != BASE_ATTACK && attType != OFF_ATTACK)
             return false;
 
-        //if (((attType == BASE_ATTACK) && !(eventInfo.GetTypeMask() & PROC_FLAG_DONE_MAINHAND_ATTACK)) ||
-        //    ((attType == OFF_ATTACK) && !(eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)))
-        //    return false;
+        if (((attType == BASE_ATTACK) && !(eventInfo.GetTypeMask() & PROC_FLAG_DONE_MAINHAND_ATTACK)) ||
+            ((attType == OFF_ATTACK) && !(eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)))
+            return false;
 
-        uint32 typeMask = eventInfo.GetTypeMask();
-        return (((attType == BASE_ATTACK) && (typeMask & PROC_FLAG_DONE_MAINHAND_ATTACK)) ||
-                ((attType == OFF_ATTACK) && (typeMask & PROC_FLAG_DONE_OFFHAND_ATTACK)));
-
-        //return true;
-        //end npcbot
+        return true;
     }
 
     void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
     {
         PreventDefaultAction();
 
-        //npcbot
-        //Player* player = eventInfo.GetActor()->ToPlayer();
-        //Unit* target = eventInfo.GetActionTarget();
-        //WeaponAttackType attType = BASE_ATTACK;
-        //if (eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)
-        //    attType = OFF_ATTACK;
-
-        Unit* actor = eventInfo.GetActor();
+        Player* player = eventInfo.GetActor()->ToPlayer();
         Unit* target = eventInfo.GetActionTarget();
-        if (!target) return;
+        WeaponAttackType attType = BASE_ATTACK;
+        if (eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)
+            attType = OFF_ATTACK;
 
-        WeaponAttackType attType = (eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK) ? OFF_ATTACK : BASE_ATTACK;
-
-        //Item* item = player->GetWeaponForAttack(attType);
-        //if (!item)
-        //    return;
-
-        // npcbot: Item detection for both players and bots
-        ObjectGuid itemGuid = GetAura()->GetCastItemGUID();
-        Item* item = nullptr;
-
-        if (actor->IsPlayer())
-            item = actor->ToPlayer()->GetWeaponForAttack(attType);
-        else if (actor->IsNPCBot())
-            item = actor->ToCreature()->GetBotEquipsByGuid(itemGuid);
-
-        if (!item) return;
+        Item* item = player->GetWeaponForAttack(attType);
+        if (!item)
+            return;
 
         float basePoints = GetSpellInfo()->Effects[aurEff->GetEffIndex()].CalcValue();
 
         // Flametongue max damage is normalized based on a 4.0 speed weapon
-        //float attackSpeed = player->GetAttackTime(attType) / 1000.f;
-        float attackSpeed = actor->GetAttackTime(attType) / 1000.f;
+        float attackSpeed = player->GetAttackTime(attType) / 1000.f;
         float fireDamage = basePoints / 100.0f;
         fireDamage *= attackSpeed;
 
@@ -1679,18 +1630,14 @@ class spell_sha_flametongue_weapon : public AuraScript
         RoundToInterval(fireDamage, basePoints / 77.0f, basePoints / 25.0f);
 
         // Calculate Spell Power scaling
-        //float spellPowerBonus = player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE);
-        float spellPowerBonus = actor->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE);
+        float spellPowerBonus = player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE);
         spellPowerBonus += target->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_DAMAGE_TAKEN, SPELL_SCHOOL_MASK_FIRE);
 
-        //float const spCoeff = 0.03811f;
-        // npcbot: Use the specific bot coefficient if needed, otherwise default to player 0.03811f
-        float const spCoeff = actor->IsNPCBot() ? 0.0384f : 0.03811f;
+        float const spCoeff = 0.03811f;
         spellPowerBonus *= spCoeff * attackSpeed;
 
         int32 totalDamage = int32(fireDamage + spellPowerBonus);
-        //player->CastCustomSpell(SPELL_SHAMAN_FLAMETONGUE_ATTACK, SPELLVALUE_BASE_POINT0, totalDamage, target, true, item, aurEff);
-        actor->CastCustomSpell(SPELL_SHAMAN_FLAMETONGUE_ATTACK, SPELLVALUE_BASE_POINT0, totalDamage, target, true, item, aurEff);
+        player->CastCustomSpell(SPELL_SHAMAN_FLAMETONGUE_ATTACK, SPELLVALUE_BASE_POINT0, totalDamage, target, true, item, aurEff);
     }
 
     void Register() override
@@ -2219,133 +2166,48 @@ class spell_sha_windfury_weapon : public AuraScript
 
     bool CheckProc(ProcEventInfo& eventInfo)
     {
-        //npcbot
-        //Player* player = eventInfo.GetActor()->ToPlayer();
-        //if (!player)
-        //    return false;
-
-        Unit* actor = eventInfo.GetActor();
-        if (!actor->IsPlayer() && !actor->IsNPCBot())
+        Player* player = eventInfo.GetActor()->ToPlayer();
+        if (!player)
             return false;
-		
-        // npcbot: Internal Cooldown check
-        if (actor->IsNPCBot() && actor->ToCreature()->HasSpellCooldown(GetSpellInfo()->Id))
+
+        Item* item = player->GetItemByGuid(GetAura()->GetCastItemGUID());
+        if (!item || !item->IsEquipped())
             return false;
-		
-        //Item* item = player->GetItemByGuid(GetAura()->GetCastItemGUID());
-        //if (!item || !item->IsEquipped())
-        //    return false;
 
-        // Get the item responsible for the proc
-        ObjectGuid itemGuid = GetAura()->GetCastItemGUID();
-        Item* item = nullptr;
-
-        if (actor->IsPlayer())
-            item = actor->ToPlayer()->GetItemByGuid(itemGuid);
-        else if (actor->IsNPCBot())
-            item = actor->ToCreature()->GetBotEquipsByGuid(itemGuid);
-
-        if (!item)
-            return false; // Use 'return false;' if this is inside CheckProc (a bool function)
-		
-        //WeaponAttackType attType = Player::GetAttackBySlot(item->GetSlot());
-        //if (attType != BASE_ATTACK && attType != OFF_ATTACK)
-        //    return false;
-
-        // Determine if this is Main Hand or Off Hand
-        WeaponAttackType attType = (actor->IsNPCBot()) ? 
-            (actor->ToCreature()->GetBotEquips(0) == item ? BASE_ATTACK : OFF_ATTACK) : 
-            Player::GetAttackBySlot(item->GetSlot());
-
+        WeaponAttackType attType = Player::GetAttackBySlot(item->GetSlot());
         if (attType != BASE_ATTACK && attType != OFF_ATTACK)
             return false;
 
-        //if (((attType == BASE_ATTACK) && !(eventInfo.GetTypeMask() & PROC_FLAG_DONE_MAINHAND_ATTACK)) ||
-        //    ((attType == OFF_ATTACK) && !(eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)))
-        //    return false;
+        if (((attType == BASE_ATTACK) && !(eventInfo.GetTypeMask() & PROC_FLAG_DONE_MAINHAND_ATTACK)) ||
+            ((attType == OFF_ATTACK) && !(eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)))
+            return false;
 
-        // Match the attack type to the actual swing that occurred
-        uint32 typeMask = eventInfo.GetTypeMask();
-        return (((attType == BASE_ATTACK) && (typeMask & PROC_FLAG_DONE_MAINHAND_ATTACK)) ||
-                ((attType == OFF_ATTACK) && (typeMask & PROC_FLAG_DONE_OFFHAND_ATTACK)));
-
-        //return true;
-        //end npcbot
+        return true;
     }
 
     void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
     {
         PreventDefaultAction();
 
-        //npcbot
-        Unit* actor = eventInfo.GetActor();
+        Player* player = eventInfo.GetActor()->ToPlayer();
         Unit* target = eventInfo.GetActionTarget();
-        if (!target) return;
-        //Player* player = eventInfo.GetActor()->ToPlayer();
-        //Unit* target = eventInfo.GetActionTarget();
-        //if (!target)
-        //    return;
+        if (!target)
+            return;
 
-        //Item* item = player->GetItemByGuid(GetAura()->GetCastItemGUID());
-        //if (!item)
-        //    return;
-
-        ObjectGuid itemGuid = GetAura()->GetCastItemGUID();
-        Item* item = nullptr;
-
-        if (actor->IsPlayer())
-            item = actor->ToPlayer()->GetItemByGuid(itemGuid);
-        else if (actor->IsNPCBot())
-            item = actor->ToCreature()->GetBotEquipsByGuid(itemGuid);
-
+        Item* item = player->GetItemByGuid(GetAura()->GetCastItemGUID());
         if (!item)
             return;
 
-        //uint8 slot = item->GetSlot();
-        //bool mainHand = slot == EQUIPMENT_SLOT_MAINHAND;
-        //uint32 spellId = mainHand ? SPELL_SHAMAN_WINDFURY_ATTACK_MH : SPELL_SHAMAN_WINDFURY_ATTACK_OH;
+        uint8 slot = item->GetSlot();
+        bool mainHand = slot == EQUIPMENT_SLOT_MAINHAND;
+        uint32 spellId = mainHand ? SPELL_SHAMAN_WINDFURY_ATTACK_MH : SPELL_SHAMAN_WINDFURY_ATTACK_OH;
 
-        bool mainHand = (actor->IsNPCBot()) ? (actor->ToCreature()->GetBotEquips(0) == item) : (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND);
-        uint32 triggeredSpell = mainHand ? SPELL_SHAMAN_WINDFURY_ATTACK_MH : SPELL_SHAMAN_WINDFURY_ATTACK_OH;
+        SpellInfo const* windfurySpellInfo = sSpellMgr->GetSpellInfo(SPELL_SHAMAN_WINDFURY_WEAPON_R1);
+        int32 bonus = windfurySpellInfo ? windfurySpellInfo->Effects[EFFECT_1].CalcValue(player) : 0;
+        bonus = int32(bonus * player->GetAttackTime(mainHand ? BASE_ATTACK : OFF_ATTACK) / 1000.f);
 
-        //SpellInfo const* windfurySpellInfo = sSpellMgr->GetSpellInfo(SPELL_SHAMAN_WINDFURY_WEAPON_R1);
-
-        SpellInfo const* spellInfo = GetSpellInfo();
-        
-        // npcbot: Handle rank-specific scaling for bots based on Enchantment ID
-        if (actor->IsNPCBot())
-        {
-            uint32 botSpellId = 0;
-            switch (item->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT))
-            {
-                case 283: botSpellId = 8232; break;   // Rank 1
-                case 284: botSpellId = 8235; break;   // Rank 2
-                case 525: botSpellId = 10486; break;  // Rank 3
-                case 1669: botSpellId = 16362; break; // Rank 4
-                case 2636: botSpellId = 25505; break; // Rank 5
-                case 3785: botSpellId = 58801; break; // Rank 6
-                case 3786: botSpellId = 58803; break; // Rank 7
-                case 3787: botSpellId = 58804; break; // Rank 8
-                default: break;
-            }
-            if (botSpellId) spellInfo = sSpellMgr->GetSpellInfo(botSpellId);
-            actor->ToCreature()->AddBotSpellCooldown(GetSpellInfo()->Id, GetSpellInfo()->RecoveryTime);
-        }
-
-
-        //int32 bonus = windfurySpellInfo ? windfurySpellInfo->Effects[EFFECT_1].CalcValue(player) : 0;
-        //bonus = int32(bonus * player->GetAttackTime(mainHand ? BASE_ATTACK : OFF_ATTACK) / 1000.f);
-
-        // Calculation is now unified for both types
-        int32 bonus = spellInfo ? spellInfo->Effects[EFFECT_1].CalcValue(actor) : 0;
-        bonus = int32(bonus * actor->GetAttackTime(mainHand ? BASE_ATTACK : OFF_ATTACK) / 1000.f);
-
-        //player->CastCustomSpell(spellId, SPELLVALUE_BASE_POINT0, bonus, target, true, item, aurEff);
-        //player->CastCustomSpell(spellId, SPELLVALUE_BASE_POINT0, bonus, target, true, item, aurEff);
-
-        // Cast the two extra attacks
-        actor->CastCustomSpell(triggeredSpell, SPELLVALUE_BASE_POINT0, bonus, target, true, item, aurEff);
-        actor->CastCustomSpell(triggeredSpell, SPELLVALUE_BASE_POINT0, bonus, target, true, item, aurEff);
+        player->CastCustomSpell(spellId, SPELLVALUE_BASE_POINT0, bonus, target, true, item, aurEff);
+        player->CastCustomSpell(spellId, SPELLVALUE_BASE_POINT0, bonus, target, true, item, aurEff);
     }
 
     void Register() override

@@ -3657,12 +3657,10 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, AuraEffect const
 
     // prevent exploit that allows to cast spell while sitting
     if (!IsTriggered() && !(m_spellInfo->AuraInterruptFlags & AURA_INTERRUPT_FLAG_NOT_SEATED) && !(m_spellInfo->Attributes & SPELL_ATTR0_ALLOW_WHILE_SITTING) && !m_triggeredByAuraSpell && m_caster->IsSitState())
-    {
         //npcbot
         if (!m_originalCaster || m_caster == m_originalCaster)
         //end npcbot
-            m_caster->SetStandState(UNIT_STAND_STATE_STAND);
-    }
+        m_caster->SetStandState(UNIT_STAND_STATE_STAND);
 
     //Containers for channeled spells have to be set
     //TODO:Apply this to all casted spells if needed

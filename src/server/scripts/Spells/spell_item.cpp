@@ -4577,30 +4577,10 @@ class spell_item_darkmoon_card_greatness : public AuraScript
         PreventDefaultAction();
 
         Unit* caster = eventInfo.GetActor();
-        //npcbot
-        //float str = caster->GetStat(STAT_STRENGTH);
-        //float agi = caster->GetStat(STAT_AGILITY);
-        //float intl = caster->GetStat(STAT_INTELLECT);
-        //float spi = caster->GetStat(STAT_SPIRIT);
-        float str, agi, intl, spi;
-
-        // npcbot: Fetch stats using BotMgr for bots, otherwise use standard Unit stats
-        if (caster->IsNPCBot())
-        {
-            str  = (float)BotMgr::GetBotStat(caster->ToCreature(), BOT_STAT_MOD_STRENGTH);
-            agi  = (float)BotMgr::GetBotStat(caster->ToCreature(), BOT_STAT_MOD_AGILITY);
-            intl = (float)BotMgr::GetBotStat(caster->ToCreature(), BOT_STAT_MOD_INTELLECT);
-            spi  = (float)BotMgr::GetBotStat(caster->ToCreature(), BOT_STAT_MOD_SPIRIT);
-        }
-        else
-        {
-            str  = caster->GetStat(STAT_STRENGTH);
-            agi  = caster->GetStat(STAT_AGILITY);
-            intl = caster->GetStat(STAT_INTELLECT);
-            spi  = caster->GetStat(STAT_SPIRIT);
-        }
-        //end npcbot
-
+        float str = caster->GetStat(STAT_STRENGTH);
+        float agi = caster->GetStat(STAT_AGILITY);
+        float intl = caster->GetStat(STAT_INTELLECT);
+        float spi = caster->GetStat(STAT_SPIRIT);
         float stat = 0.0f;
 
         uint32 spellTrigger = SPELL_DARKMOON_CARD_STRENGTH;
@@ -4629,14 +4609,6 @@ class spell_item_darkmoon_card_greatness : public AuraScript
         }
 
         caster->CastSpell(caster, spellTrigger, true, nullptr, aurEff);
-
-        // npcbot: Add the 45-second cooldown to the bot's internal tracker
-        if (caster->IsNPCBot())
-        {
-            // 45000ms = 45 seconds
-            caster->ToCreature()->AddBotSpellCooldown(spellTrigger, 45000); 
-        }
-        //end npcbot
     }
 
     void Register() override
@@ -4665,59 +4637,26 @@ class spell_item_death_choice : public AuraScript
         PreventDefaultAction();
 
         Unit* caster = eventInfo.GetActor();
-        //npcbot
-        //float str = caster->GetStat(STAT_STRENGTH);
-        //float agi = caster->GetStat(STAT_AGILITY);
-        float str, agi;
-
-        // npcbot: Fetch stats using BotMgr for bots, otherwise use standard Unit stats
-        if (caster->IsNPCBot())
-        {
-            str = (float)BotMgr::GetBotStat(caster->ToCreature(), BOT_STAT_MOD_STRENGTH);
-            agi = (float)BotMgr::GetBotStat(caster->ToCreature(), BOT_STAT_MOD_AGILITY);
-        }
-        else
-        {
-            str = caster->GetStat(STAT_STRENGTH);
-            agi = caster->GetStat(STAT_AGILITY);
-        }
-
-        uint32 spellId = 0;
+        float str = caster->GetStat(STAT_STRENGTH);
+        float agi = caster->GetStat(STAT_AGILITY);
 
         switch (aurEff->GetId())
         {
             case SPELL_DEATH_CHOICE_NORMAL_AURA:
-                //if (str > agi)
-                //    caster->CastSpell(caster, SPELL_DEATH_CHOICE_NORMAL_STRENGTH, true, nullptr, aurEff);
-                //else
-                //    caster->CastSpell(caster, SPELL_DEATH_CHOICE_NORMAL_AGILITY, true, nullptr, aurEff);
-                spellId = (str >= agi) ? SPELL_DEATH_CHOICE_NORMAL_STRENGTH : SPELL_DEATH_CHOICE_NORMAL_AGILITY;
+                if (str > agi)
+                    caster->CastSpell(caster, SPELL_DEATH_CHOICE_NORMAL_STRENGTH, true, nullptr, aurEff);
+                else
+                    caster->CastSpell(caster, SPELL_DEATH_CHOICE_NORMAL_AGILITY, true, nullptr, aurEff);
                 break;
             case SPELL_DEATH_CHOICE_HEROIC_AURA:
-                //if (str > agi)
-                //    caster->CastSpell(caster, SPELL_DEATH_CHOICE_HEROIC_STRENGTH, true, nullptr, aurEff);
-                //else
-                //    caster->CastSpell(caster, SPELL_DEATH_CHOICE_HEROIC_AGILITY, true, nullptr, aurEff);
-                spellId = (str >= agi) ? SPELL_DEATH_CHOICE_HEROIC_STRENGTH : SPELL_DEATH_CHOICE_HEROIC_AGILITY;
+                if (str > agi)
+                    caster->CastSpell(caster, SPELL_DEATH_CHOICE_HEROIC_STRENGTH, true, nullptr, aurEff);
+                else
+                    caster->CastSpell(caster, SPELL_DEATH_CHOICE_HEROIC_AGILITY, true, nullptr, aurEff);
                 break;
             default:
-                //break;
-                return;
+                break;
         }
-
-        // npcbot: Add the 45-second cooldown to the bot's internal tracker
-        if (spellId)
-        {
-            caster->CastSpell(caster, spellId, true, nullptr, aurEff);
-
-            // npcbot: Synchronize the 45-second internal cooldown (ICD) with the bot's AI
-            if (caster->IsNPCBot())
-            {
-                // 45000ms = 45 seconds
-                caster->ToCreature()->AddBotSpellCooldown(spellId, 45000);
-            }
-        }
-        //end npcbot
     }
 
     void Register() override

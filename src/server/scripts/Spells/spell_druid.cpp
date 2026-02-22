@@ -1481,23 +1481,6 @@ class spell_dru_leader_of_the_pack : public AuraScript
             int32 manaAmount = CalculatePct(target->GetMaxPower(POWER_MANA), healAmount * 2);
             target->CastCustomSpell(SPELL_DRUID_LEADER_OF_THE_PACK_MANA, SPELLVALUE_BASE_POINT0, manaAmount, target, true, nullptr, aurEff);
         }
-		
-        // npcbot - proc for bot
-        Unit* caster = GetCaster();
-        if (caster && caster->IsNPCBot())
-        {
-            // Check cooldown on the caster (the bot)
-            if (caster->ToCreature() && !caster->ToCreature()->HasSpellCooldown(34299))
-            {
-                // In the old Unit.cpp, basepoints1 was usually 4% of max health for this spell
-                int32 bp0 = int32(caster->GetMaxHealth() * 0.04f); 
-            
-                // Call CastCustomSpell ON the caster. 
-                // We use 'aurEff' as the 'triggeredByAura' equivalent.
-                caster->CastCustomSpell(caster, 68285, &bp0, nullptr, nullptr, true, nullptr, aurEff);
-            }
-        }
-        // end npcbot
     }
 
     void Register() override
@@ -1557,9 +1540,7 @@ class spell_dru_eclipse : public AuraScript
             return false;
 
         Unit* target = GetTarget();
-        // npcbot: Allow NPCBots to proc this (original code blocked non-players)
-        //if (!target->IsPlayer())
-        if (!target->IsPlayer() && !target->IsNPCBot())
+        if (!target->IsPlayer())
             return false;
 
         bool isWrathSpell = (spellInfo->SpellFamilyFlags[0] & 1);
@@ -1569,28 +1550,12 @@ class spell_dru_eclipse : public AuraScript
         if (!isWrathSpell && !isStarfireSpell)
             return false;
 
-        //npcbot: Handle Cooldowns for Bots
-        if (target->IsNPCBot())
-        {
-            uint32 triggeredSpell = isWrathSpell ? SPELL_DRUID_ECLIPSE_LUNAR : SPELL_DRUID_ECLIPSE_SOLAR;
-            if (target->ToCreature() && target->ToCreature()->HasSpellCooldown(triggeredSpell))
-                return false;
-        }
-        else // Standard Player Cooldown handling
         // Check 30 second internal cooldown
-        //uint32 now = GameTime::GetGameTimeMS().count();
-        //if (isWrathSpell && _lunarProcCooldownEnd > now)
-        //    return false;
-        //if (isStarfireSpell && _solarProcCooldownEnd > now)
-        //    return false;
-        {
-            uint32 now = GameTime::GetGameTimeMS().count();
-            if (isWrathSpell && _lunarProcCooldownEnd > now)
-                return false;
-            if (isStarfireSpell && _solarProcCooldownEnd > now)
-                return false;
-        }
-        //end npcbot
+        uint32 now = GameTime::GetGameTimeMS().count();
+        if (isWrathSpell && _lunarProcCooldownEnd > now)
+            return false;
+        if (isStarfireSpell && _solarProcCooldownEnd > now)
+            return false;
 
         // Don't proc if already have any eclipse aura
         if (target->HasAura(SPELL_DRUID_ECLIPSE_LUNAR) || target->HasAura(SPELL_DRUID_ECLIPSE_SOLAR))
@@ -1610,32 +1575,14 @@ class spell_dru_eclipse : public AuraScript
         bool isWrathSpell = (spellInfo->SpellFamilyFlags[0] & 1);
         uint32 triggeredSpell = isWrathSpell ? SPELL_DRUID_ECLIPSE_LUNAR : SPELL_DRUID_ECLIPSE_SOLAR;
 
-        //npcbot
-        Unit* target = GetTarget();
-
-        // npcbot: Set internal creature cooldown for bots
-        if (target->IsNPCBot() && target->ToCreature())
-        {
-            target->ToCreature()->AddSpellCooldown(triggeredSpell, 0, 30 * IN_MILLISECONDS);
-        }
-        else // Set player-specific cooldown timestamps
-        {
         // Set 30 second internal cooldown
-        //uint32 now = GameTime::GetGameTimeMS().count();
-        //if (isWrathSpell)
-        //    _lunarProcCooldownEnd = now + 30000;
-        //else
-        //    _solarProcCooldownEnd = now + 30000;
-            uint32 now = GameTime::GetGameTimeMS().count();
-            if (isWrathSpell)
-                _lunarProcCooldownEnd = now + 30000;
-            else
-                _solarProcCooldownEnd = now + 30000;
-        }
+        uint32 now = GameTime::GetGameTimeMS().count();
+        if (isWrathSpell)
+            _lunarProcCooldownEnd = now + 30000;
+        else
+            _solarProcCooldownEnd = now + 30000;
 
-        //GetTarget()->CastSpell(GetTarget(), triggeredSpell, true, nullptr, aurEff);
-        target->CastSpell(target, triggeredSpell, true, nullptr, aurEff);
-        //end npcbot
+        GetTarget()->CastSpell(GetTarget(), triggeredSpell, true, nullptr, aurEff);
     }
 
     void Register() override
@@ -1965,14 +1912,6 @@ class spell_dru_t10_restoration_4p_bonus_dummy : public AuraScript
         HealInfo* healInfo = eventInfo.GetHealInfo();
         if (!healInfo || !healInfo->GetHeal())
             return false;
-
-        //npcbot
-        Unit* actor = eventInfo.GetActor();
-        if (actor->IsNPCBot())
-        {
-            return actor != eventInfo.GetActionTarget();
-        }
-        //end npcbot
 
         Player* caster = eventInfo.GetActor()->ToPlayer();
         if (!caster)

@@ -354,10 +354,6 @@ private:
     // amalgamation constructor (used for proc)
     DamageInfo(DamageInfo const& dmg1, DamageInfo const& dmg2);
 
-    //npcbot
-    uint32 m_procEx = 0;
-    //end npcbot
-
 public:
     explicit DamageInfo(Unit* _attacker, Unit* _victim, uint32 _damage, SpellInfo const* _spellInfo, SpellSchoolMask _schoolMask, DamageEffectType _damageType, uint32 cleanDamage = 0);
     explicit DamageInfo(CalcDamageInfo const& dmgInfo); // amalgamation wrapper
@@ -384,10 +380,6 @@ public:
     [[nodiscard]] uint32 GetHitMask() const;
     void AddHitMask(uint32 hitMask) { m_hitMask |= hitMask; }
     [[nodiscard]] uint32 GetUnmitigatedDamage() const;
-
-    //npcbot
-    [[nodiscard]] uint32 GetBotHitMask() const { return m_procEx; }
-    //end npcbot
 };
 
 class HealInfo
@@ -503,7 +495,6 @@ struct CalcDamageInfo
     WeaponAttackType attackType; //
     uint32 procAttacker;
     uint32 procVictim;
-    uint32 procEx;               //npcbot
     uint32 cleanDamage;          // Used only for rage calculation
     MeleeHitOutcome hitOutCome;  /// @todo: remove this field (need use TargetState)
 };

@@ -1059,49 +1059,14 @@ class spell_warr_deep_wounds_aura : public AuraScript
         PreventDefaultAction();
 
         Unit* caster = GetTarget();
-        //npcbot
-        //if (!caster->IsPlayer())
-        //    return;
-
-        // Fix 1: Allow bots to pass this check
-        if (!caster->IsPlayer() && !caster->IsNPCBot())
+        if (!caster->IsPlayer())
             return;
-        //end npcbot
 
         int32 basepoints;
-		
-        // npcbot: Deep Wounds logic for bots
-        if (caster->IsNPCBot())
-        {
-            // Fix 2: Get procFlags from eventInfo
-            uint32 procFlags = eventInfo.GetTypeMask();
-            
-            // Fix 3: Use caster->ToCreature()
-            // 0 = MainHand, 1 = OffHand
-            Item const* item = caster->ToCreature()->GetBotEquips((procFlags & PROC_FLAG_DONE_OFFHAND_ATTACK) ? 1 : 0);
-            
-            if (!item) 
-                return; // Fix 4: Void return
-
-            ItemTemplate const* weapon = item->GetTemplate();
-
-            // Fix 5: Calculate using caster pointers
-            float weaponDPS = weapon->getDPS();
-            float attackPowerDPS = caster->GetTotalAttackPowerValue(BASE_ATTACK) / 14.0f;
-            float weaponSpeed = float(weapon->Delay) / 1000.0f;
-            
-            basepoints = int32((weaponDPS + attackPowerDPS) * weaponSpeed);
-        }
+        if (eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)
+            basepoints = int32((caster->GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE) + caster->GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE)) / 2.0f);
         else
-        {
-        //end npcbot
-            if (eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)
-                basepoints = int32((caster->GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE) + caster->GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE)) / 2.0f);
-            else
-                basepoints = int32((caster->GetFloatValue(UNIT_FIELD_MAXDAMAGE) + caster->GetFloatValue(UNIT_FIELD_MINDAMAGE)) / 2.0f);
-        //npcbot
-        }
-        //end npcbot
+            basepoints = int32((caster->GetFloatValue(UNIT_FIELD_MAXDAMAGE) + caster->GetFloatValue(UNIT_FIELD_MINDAMAGE)) / 2.0f);
 
         uint32 triggeredSpellId = GetSpellInfo()->Effects[EFFECT_0].TriggerSpell;
         if (Unit* target = eventInfo.GetActionTarget())
