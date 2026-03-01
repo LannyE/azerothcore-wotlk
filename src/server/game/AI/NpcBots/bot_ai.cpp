@@ -40,6 +40,7 @@
 #include "ObjectMgr.h"
 #include "PathGenerator.h"
 #include "PointMovementGenerator.h"
+#include "RaceMgr.h"
 #include "ScriptedGossip.h"
 #include "ScriptMgr.h"
 #include "SpellAuraEffects.h"
@@ -6003,9 +6004,9 @@ uint32 bot_ai::_selectMountSpell() const
                 static const MountArray MOUNTS_280_HORDE = { BOT_MOUNT_FLY_HORDE_280_1, BOT_MOUNT_FLY_HORDE_280_2, BOT_MOUNT_FLY_HORDE_280_3 };
 
                 Optional<MountArray> myMounts;
-                if (me->GetRaceMask() & RACEMASK_ALLIANCE)
+                if (me->GetRaceMask() & sRaceMgr->GetAllianceRaceMask())
                     myMounts = useSlowMount ? MOUNTS_150_ALLIANCE : MOUNTS_280_ALLIANCE;
-                else if (me->GetRaceMask() & RACEMASK_HORDE)
+                else if (me->GetRaceMask() & sRaceMgr->GetHordeRaceMask())
                     myMounts = useSlowMount ? MOUNTS_150_HORDE : MOUNTS_280_HORDE;
 
                 if (myMounts)
