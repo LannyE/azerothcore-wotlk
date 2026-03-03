@@ -2563,7 +2563,7 @@ class spell_gen_vehicle_scaling_aura: public AuraScript
         if (GetCaster() && GetCaster()->IsNPCBot() && GetOwner()->GetTypeId() == TYPEID_UNIT)
             return true;
         //end npcbot
-        return GetCaster() && GetCaster()->IsPlayer() && GetOwner()->IsCreature();
+        return GetCaster() && GetCaster()->IsPlayer() && GetOwner() && GetOwner()->IsCreature();
     }
 
     void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
