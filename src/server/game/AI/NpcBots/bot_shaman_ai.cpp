@@ -29,14 +29,6 @@ Aura application bug for bot in other subgroup, maybe caused by creatorGUID mism
 constexpr uint8 MAX_WOLVES = 2;
 constexpr uint8 MAX_TOTEMS = 4;
 
-static constexpr uint32 TotemModelsForRace[MAX_TOTEMS][11] =
-{
-    { 0, 30758, 30754, 0, 0, 4589, 0, 30762, 0, 0, 19074 },
-    { 0, 30757, 30753, 0, 0, 4588, 0, 30761, 0, 0, 19073 },
-    { 0, 30759, 30755, 0, 0, 4587, 0, 30763, 0, 0, 19075 },
-    { 0, 30756, 30756, 0, 0, 4590, 0, 30760, 0, 0, 19071 }
-};
-
 enum ShamanBaseSpells
 {
     HEALING_WAVE_1                      = 331,
@@ -2349,7 +2341,7 @@ public:
             //Without setting creator correctly it will be impossible to use summon X elemental totems
             summon->SetCreator(me);
             //summon->SetDisplayId(sObjectMgr->GetModelForTotem(SummonSlot(slot+1), Races(me->GetRace())));
-            summon->SetDisplayId(TotemModelsForRace[slot][std::min<uint8>(me->GetRace(), sRaceMgr->GetMaxRaces()-1)-1]);
+            summon->SetDisplayId(sObjectMgr->GetModelForTotem(SummonSlot(totem->m_Properties->Slot), Races(me->GetRace())));
             summon->SetFaction(me->GetFaction());
             summon->SetPvP(me->IsPvP());
             summon->SetOwnerGUID(master->GetGUID());

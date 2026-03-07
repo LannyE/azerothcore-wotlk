@@ -26,8 +26,8 @@
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Player.h"
-//#include "RBAC.h"
 #include "RaceMgr.h"
+//#include "RBAC.h"
 #include "ScriptMgr.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
@@ -174,7 +174,7 @@ private:
         SOUNDSETMODEL_BLOODELF_FEMALE_3     = 15520,
     };
 
-    static constexpr size_t RaceToRaceOffset[12] = {
+    static constexpr size_t RaceToRaceOffset[] = {
         RACE_NONE,
         0, //RACE_HUMAN
         5, //RACE_ORC
