@@ -3703,6 +3703,12 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, AuraEffect const
         m_caster->SetCurrentCastedSpell(this);
         SendSpellStart();
 
+        // Call CreatureAI hook OnSpellStart for spells with cast time or channeled spells
+        if (m_casttime > 0 || m_spellInfo->IsChanneled())
+            if (Creature* caster = m_caster->ToCreature())
+                if (caster->IsAIEnabled)
+                    caster->AI()->OnSpellStart(GetSpellInfo());
+
         // set target for proper facing
         if ((m_casttime || m_spellInfo->IsChanneled()) && !HasTriggeredCastFlag(TRIGGERED_IGNORE_SET_FACING))
         {
@@ -4155,11 +4161,10 @@ void Spell::_cast(bool skipCheck)
 
     SetExecutedCurrently(false);
 
-    // Call CreatureAI hook OnSpellCastFinished
-    if (m_originalCaster)
-        if (Creature* caster = m_originalCaster->ToCreature())
-            if (caster->IsAIEnabled)
-                caster->AI()->OnSpellCastFinished(GetSpellInfo(), SPELL_FINISHED_SUCCESSFUL_CAST);
+    // Call CreatureAI hook on successful cast
+    if (Creature* caster = m_caster->ToCreature())
+        if (caster->IsAIEnabled)
+            caster->AI()->OnSpellCast(GetSpellInfo());
 }
 
 void Spell::handle_immediate()
@@ -4519,7 +4524,7 @@ void Spell::update(uint32 difftime)
                     // We call the hook here instead of in Spell::finish because we only want to call it for completed channeling. Everything else is handled by interrupts
                     if (Creature* creatureCaster = m_caster->ToCreature())
                         if (creatureCaster->IsAIEnabled)
-                            creatureCaster->AI()->OnSpellCastFinished(m_spellInfo, SPELL_FINISHED_CHANNELING_COMPLETE);
+                            creatureCaster->AI()->OnChannelFinished(m_spellInfo);
 
                     //npcbot: signal channel finish to botmgr
                     if (m_caster->IsNPCBot())
@@ -4596,8 +4601,8 @@ void Spell::finish(bool ok)
             // Xinef: Reset cooldown event in case of fail cast
             if (m_spellInfo->IsCooldownStartedOnEvent())
                 m_caster->ToPlayer()->SendCooldownEvent(m_spellInfo, 0, 0, false);
-
         }
+
         return;
     }
 

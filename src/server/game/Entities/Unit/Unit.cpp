@@ -44,6 +44,7 @@
 #include "MoveSpline.h"
 #include "MoveSplineInit.h"
 #include "MovementGenerator.h"
+#include "AbstractFollower.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "OutdoorPvP.h"
@@ -774,8 +775,7 @@ void Unit::DisableSpline()
 
 void Unit::resetAttackTimer(WeaponAttackType type)
 {
-    int32 time = int32(GetAttackTime(type) * m_modAttackSpeedPct[type]);
-    m_attackTimer[type] = std::min(m_attackTimer[type] + time, time);
+    m_attackTimer[type] = int32(GetAttackTime(type) * m_modAttackSpeedPct[type]);
 }
 
 bool Unit::IsWithinCombatRange(Unit const* obj, float dist2compare) const
@@ -4516,7 +4516,7 @@ void Unit::InterruptSpell(CurrentSpellTypes spellType, bool withDelayed, bool wi
         }
 
         if (IsCreature() && IsAIEnabled)
-            ToCreature()->AI()->OnSpellCastFinished(spell->GetSpellInfo(), SPELL_FINISHED_CANCELED);
+            ToCreature()->AI()->OnSpellFailed(spell->GetSpellInfo());
     }
 }
 
@@ -5836,6 +5836,16 @@ void Unit::RemoveAreaAurasDueToLeaveWorld()
         }
         else
             ++iter;
+    }
+}
+
+void Unit::RemoveAllFollowers()
+{
+    while (auto* ref = m_FollowingRefMgr.getFirst())
+    {
+        auto* source = ref->GetSource();
+        ref->delink();
+        source->SetTarget(nullptr);
     }
 }
 
@@ -13541,6 +13551,8 @@ void Unit::RemoveFromWorld()
         RemoveAllControlled();
 
         RemoveAreaAurasDueToLeaveWorld();
+
+        RemoveAllFollowers();
 
         if (GetCharmerGUID())
         {
