@@ -902,6 +902,7 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry)
     _isSpellValid = true;
     _isCritCapable = false;
     _requireCooldownInfo = false;
+    JumpDistance = 0.0f;
 }
 
 SpellInfo::~SpellInfo()
