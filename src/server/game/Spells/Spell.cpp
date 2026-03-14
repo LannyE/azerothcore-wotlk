@@ -3725,13 +3725,6 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, AuraEffect const
             }
         }
 
-        //npcbot
-        // Call CreatureAI hook OnSpellStart
-        if (Creature* caster = m_caster->ToCreature())
-            if (caster->IsAIEnabled)
-                caster->AI()->OnSpellStart(GetSpellInfo());
-        //end npcbot
-
         //item: first cast may destroy item and second cast causes crash
         // xinef: removed !m_spellInfo->StartRecoveryTime
         // second los check failed in events
