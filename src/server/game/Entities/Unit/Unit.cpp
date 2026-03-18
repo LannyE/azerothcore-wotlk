@@ -8518,14 +8518,8 @@ void Unit::RemoveAllControlled(bool onDeath /*= false*/)
 
             if (!(onDeath && !IsPlayer() && target->IsGuardian()))
             {
-                // Lanny FIX: Erase from the list first to safely advance the iterator.
-                // This prevents iterator invalidation if UnSummon() also tries to remove it.
-                Unit* unsummonTarget = target;
-                // target->ToTempSummon()->UnSummon();
+                target->ToTempSummon()->UnSummon();
                 it = m_Controlled.erase(it);
-
-                // Lanny: Now safely call UnSummon on the detached target
-                unsummonTarget->ToTempSummon()->UnSummon();
             }
             else
                 ++it;
