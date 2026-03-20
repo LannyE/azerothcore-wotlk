@@ -1004,13 +1004,13 @@ uint32 Unit::DealDamage(Unit* attacker, Unit* victim, uint32 damage, CleanDamage
     // Hook for OnDamage Event
     sScriptMgr->OnDamage(attacker, victim, damage);
 
-    if (victim->IsPlayer() && attacker != victim)
+    // Signal to pets that their owner was attacked - except when DOT.
+    if (attacker != victim && damagetype != DOT)
     {
-        // Signal to pets that their owner was attacked
-        Pet* pet = victim->ToPlayer()->GetPet();
-
-        if (pet && pet->IsAlive())
-            pet->AI()->OwnerAttackedBy(attacker);
+        for (Unit* controlled : victim->m_Controlled)
+            if (Creature* cControlled = controlled->ToCreature())
+                if (CreatureAI* controlledAI = cControlled->AI())
+                    controlledAI->OwnerAttackedBy(attacker);
     }
 
     //npcbot
@@ -2974,13 +2974,6 @@ void Unit::AttackerStateUpdate(Unit* victim, WeaponAttackType attType /*= BASE_A
             LOG_DEBUG("entities.unit", "AttackerStateUpdate: (NPC) {} attacked {} for {} dmg, absorbed {}, blocked {}, resisted {}.",
                                  GetGUID().ToString(), victim->GetGUID().ToString(), dmgInfo.GetDamage(), dmgInfo.GetAbsorb(), dmgInfo.GetBlock(), dmgInfo.GetResist());
 
-        // Let the pet know we've started attacking someting. Handles melee attacks only
-        // Spells such as auto-shot and others handled in WorldSession::HandleCastSpellOpcode
-        if (IsPlayer() && !m_Controlled.empty())
-            for (Unit::ControlSet::iterator itr = m_Controlled.begin(); itr != m_Controlled.end(); ++itr)
-                if (Unit* pet = *itr)
-                    if (pet->IsAlive() && pet->IsCreature())
-                        pet->ToCreature()->AI()->OwnerAttacked(victim);
     }
 }
 
@@ -7723,7 +7716,6 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
     if (!creature->IsNPCBotOrPet())
     //end npcbot
     {
-        // should not let player enter combat by right clicking target - doesn't helps
         EngageWithTarget(victim);
 
         creature->SendAIReaction(AI_REACTION_HOSTILE);
@@ -7743,6 +7735,16 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
 
     if (meleeAttack)
         SendMeleeAttackStart(victim);
+
+    // Let the pet know we've started attacking someting. Handles melee attacks only
+    // Spells such as auto-shot and others handled in WorldSession::HandleCastSpellOpcode
+    if (IsPlayer())
+    {
+        for (Unit* controlled : m_Controlled)
+            if (Creature* cControlled = controlled->ToCreature())
+                if (CreatureAI* controlledAI = cControlled->AI())
+                    controlledAI->OwnerAttacked(victim);
+    }
 
     return true;
 }
