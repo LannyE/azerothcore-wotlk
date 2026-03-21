@@ -2960,7 +2960,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 if (!IsPlayer(target))
                     continue;
 
-                target->ToPlayer()->SendCinematicStart(e.action.cinematic.entry);
+                target->ToPlayer()->GetCinematicMgr().StartCinematic(e.action.cinematic.entry);
             }
             break;
         }
