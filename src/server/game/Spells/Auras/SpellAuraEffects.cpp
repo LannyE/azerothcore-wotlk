@@ -3629,7 +3629,7 @@ void AuraEffect::HandleAuraModTotalThreat(AuraApplication const* aurApp, uint8 m
     {
         Unit* caster = GetCaster();
         if (caster && caster->IsAlive())
-            target->getHostileRefMgr().addTempThreat((float)GetAmount(), apply);
+            caster->GetThreatMgr().UpdateMyTempModifiers();
         return;
     }
     //end npcbot

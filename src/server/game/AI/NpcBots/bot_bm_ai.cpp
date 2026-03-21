@@ -584,8 +584,7 @@ public:
                     ++counter;
             }
 
-            //me->GetCombatManager().EndAllPvECombat();
-            me->getHostileRefMgr().deleteReferences();
+            me->GetCombatManager().EndAllPvECombat();
 
             if (me->GetPhaseMask() != phaseMask)
                 me->SetPhaseMask(phaseMask, true);
@@ -681,7 +680,7 @@ public:
             CleanDamage cl(0, 0, BASE_ATTACK, MELEE_HIT_CRIT);
             Unit::DealDamage(me, target, dinfo.GetDamage(), &cl);
             Unit::ProcSkillsAndAuras((Unit*)me, calcdinfo->target, calcdinfo->procAttacker, calcdinfo->procVictim, dinfo.GetHitMask(), dinfo.GetDamage(), BASE_ATTACK, nullptr, nullptr, -1, nullptr, &dinfo, nullptr);
-            me->CombatStart(target);
+            me->AtTargetAttacked(target, false);
 
             me->resetAttackTimer(BASE_ATTACK);
             Windwalk_Timer = 0;
@@ -730,8 +729,7 @@ public:
                     me->AttackStop();
 
                 //SpellEffectSanctuary
-                //me->GetCombatManager().SuppressPvPCombat();
-                me->getHostileRefMgr().UpdateVisibility(false);
+                me->GetCombatManager().SuppressPvPCombat();
                 Unit::AttackerSet const& attackers = me->getAttackers();
                 for (Unit::AttackerSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
                 {

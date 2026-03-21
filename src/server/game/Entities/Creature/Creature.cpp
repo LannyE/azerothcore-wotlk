@@ -1980,18 +1980,19 @@ bool Creature::CanStartAttack(Unit const* who, bool force) const
         return false;
 
     // This set of checks is should be done only for creatures
+    //npcbot
+    /*
+    //end npcbot
     if ((IsImmuneToNPC() && !who->IsPlayer()) ||
         (IsImmuneToPC() && who->IsPlayer()))
-    {
         //npcbot: allow attacking PvP free bots
-        /*
         return false;
-        */
-        Unit const* bot = (who->IsNPCBotOrPet() && who->ToCreature()->IsFreeBot()) ? who->IsNPCBotPet() ? who->GetCreator() : who : nullptr;
-        if (!(bot && bot->ToCreature()->GetBotAI()->IsContestedPvP() && IsContestedGuard()))
-            return false;
-        //end npcbot
-    }
+    //npcbot
+    */
+    if ((IsImmuneToNPC() && !(who->IsPlayer() || who->IsNPCBotOrPet())) ||
+        (IsImmuneToPC() && (who->IsPlayer() || who->IsNPCBotOrPet())))
+        return false;
+    //end npcbot
 
     if (Unit* owner = who->GetOwner())
         if (owner->IsPlayer() && IsImmuneToPC())

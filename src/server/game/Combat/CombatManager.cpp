@@ -250,6 +250,20 @@ bool CombatManager::SetInCombatWith(Unit* who, bool addSecondUnitSuppressed)
     if (addSecondUnitSuppressed)
         ref->Suppress(who);
 
+    //npcbot
+    /*
+    if (_owner->GetTypeId() == TYPEID_PLAYER && _owner->ToPlayer()->HaveBot())
+    {
+        BotMap const* map = _owner->ToPlayer()->GetBotMgr()->GetBotMap();
+        for (BotMap::const_iterator itr = map->begin(); itr != map->end(); ++itr)
+        {
+            itr->second->SetInCombatWith(who);
+            if (Unit* botPet = itr->second->GetBotsPet())
+                botPet->SetInCombatWith(who);
+        }
+    }*/
+    //end npcbot
+
     // ...and insert it into both managers
     PutReference(who->GetGUID(), ref);
     who->GetCombatManager().PutReference(_owner->GetGUID(), ref);

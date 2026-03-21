@@ -545,25 +545,6 @@ void Unit::Update(uint32 p_time)
                 m_CombatTimer -= p_time;
         }
     }
-    //npcbot: update combat timer also for npcbots
-    if (IsInCombat() && IsNPCBotOrPet())
-    {
-        if (m_HostileRefMgr.IsEmpty())
-        {
-            if (m_CombatTimer <= p_time)
-            {
-                ClearInCombat();
-
-                for (uint8 i = SUMMON_SLOT_TOTEM_FIRE; i != MAX_TOTEM_SLOT; ++i)
-                    if (ObjectGuid totemGuid = m_SummonSlot[i])
-                        if (Unit* totem = ObjectAccessor::GetCreature(*this, m_SummonSlot[i]))
-                            totem->ClearInCombat();
-            }
-            else
-                m_CombatTimer -= p_time;
-        }
-    }
-    //end npcbot
 
     m_combatManager.Update(p_time);
 
@@ -11081,6 +11062,14 @@ void Unit::SetImmuneToPC(bool apply, bool keepCombat)
                     toEnd.push_back(pair.second);
             for (auto const& pair : m_combatManager.GetPvPCombatRefs())
                 toEnd.push_back(pair.second);
+            //npcbot
+            for (auto const& pair : m_combatManager.GetPvECombatRefs())
+                if (pair.second->GetOther(this)->IsNPCBotOrPet())
+                    toEnd.push_back(pair.second);
+            for (auto const& pair : m_combatManager.GetPvPCombatRefs())
+                if (pair.second->GetOther(this)->IsNPCBotOrPet())
+                    toEnd.push_back(pair.second);
+            //end npcbot
             for (CombatReference* ref : toEnd)
                 ref->EndCombat();
         }
@@ -11100,6 +11089,9 @@ void Unit::SetImmuneToNPC(bool apply, bool keepCombat)
             for (auto const& pair : m_combatManager.GetPvECombatRefs())
                 if (!pair.second->GetOther(this)->HasUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED))
                     toEnd.push_back(pair.second);
+            //npcbot
+            std::erase_if(toEnd, [this](CombatReference const* cref) { return cref->GetOther(this)->IsNPCBotOrPet(); });
+            //end npcbot
             for (CombatReference* ref : toEnd)
                 ref->EndCombat();
         }

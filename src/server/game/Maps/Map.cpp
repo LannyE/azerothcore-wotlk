@@ -738,8 +738,6 @@ void Map::RemoveFromMap(T* obj, bool remove)
     {
         if (obj->IsNPCBot())
         {
-            obj->getHostileRefMgr().deleteReferences(true);
-
             obj->RemoveFromWorld();
 
             if (obj->IsInGrid())
