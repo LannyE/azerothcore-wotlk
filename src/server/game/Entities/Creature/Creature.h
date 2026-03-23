@@ -114,14 +114,13 @@ public:
     void LoadSpellTemplateImmunity();
     //npcbot
     /*
-    bool IsImmunedToSpell(SpellInfo const* spellInfo, Spell const* spell = nullptr) override;
-    */
     bool IsImmunedToSpell(SpellInfo const* spellInfo, Spell const* spell = nullptr) const override;
+    */
     //end npcbot
 
-    [[nodiscard]] bool HasMechanicTemplateImmunity(uint32 mask) const;
+    [[nodiscard]] bool HasMechanicTemplateImmunity(uint64 mask) const;
     // redefine Unit::IsImmunedToSpell
-    bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, uint32 index) const override;
+    bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, uint32 index, Unit const* caster = nullptr) const override;
     // redefine Unit::IsImmunedToSpellEffect
     [[nodiscard]] bool isElite() const
     {
@@ -200,6 +199,8 @@ public:
     void UpdateMaxPower(Powers power) override;
     void UpdateAttackPowerAndDamage(bool ranged = false) override;
     void CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bool addTotalPct, float& minDamage, float& maxDamage, uint8 damageIndex) override;
+
+    void LoadTemplateImmunities(int32 creatureImmunitiesId);
 
     void LoadSparringPct();
     [[nodiscard]] float GetSparringPct() const { return _sparringPct; }
@@ -579,6 +580,7 @@ protected:
 
     SpellSchoolMask m_meleeDamageSchoolMask;
     uint32 m_originalEntry;
+    int32 _creatureImmunitiesId;
     uint32 _gossipMenuId;
 
     bool m_moveInLineOfSightDisabled;
