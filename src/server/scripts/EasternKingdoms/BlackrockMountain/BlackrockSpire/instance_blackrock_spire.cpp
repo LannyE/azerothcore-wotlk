@@ -311,6 +311,16 @@ struct instance_blackrock_spire : public InstanceScript
                     if (Creature* nefarius = instance->GetCreature(LordVictorNefarius))
                         nefarius->AI()->Talk(SAY_NEFARIUS_REND_WIPE);
                 }
+                //Lanny
+                if (state == DONE)
+                {
+                    if (Creature* nefarius = instance->GetCreature(LordVictorNefarius))
+                    {
+                        nefarius->DespawnOrUnsummon(12s,0s);
+                        Events.ScheduleEvent(EVENT_NEFARIUS_REND_SAY, 5s);
+                    }
+                }
+                //End Lanny NPCBots	
                 break;
             default:
                 break;
@@ -394,17 +404,7 @@ struct instance_blackrock_spire : public InstanceScript
                         for (auto const& mobGUID : UrokMobs)
                             if (Creature* mob = instance->GetCreature(mobGUID))
                                 mob->DespawnOrUnsummon();
-                    }
-                    //Lanny
-                    if (state == DONE)
-                    {
-                        if (Creature* nefarius = instance->GetCreature(LordVictorNefarius))
-                        {
-                            nefarius->DespawnOrUnsummon(12s,0s);
-                            Events.ScheduleEvent(EVENT_NEFARIUS_REND_SAY, 5s);
-                        }
-                    }
-                    //End Lanny NPCBots					
+                    }			
                 }
                 break;
             default:

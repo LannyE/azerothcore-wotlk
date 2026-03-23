@@ -132,7 +132,7 @@ void bot_pet_ai::GenerateRand() const
 
 bool bot_pet_ai::_checkImmunities(Unit const* target, SpellInfo const* spellInfo) const
 {
-    return target && spellInfo && !target->IsImmunedToDamage(spellInfo);
+    return target && spellInfo && !target->IsImmunedToSpell(spellInfo);
 }
 //Follow point calculation
 void bot_pet_ai::_calculatePos(Position& pos) const

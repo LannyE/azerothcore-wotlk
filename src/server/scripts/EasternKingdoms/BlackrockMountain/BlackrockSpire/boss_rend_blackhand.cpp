@@ -283,12 +283,12 @@ struct boss_rend_blackhand : public BossAI
 					//Lanny
 					case EVENT_START_2:
 						events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0ms);
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
 						events.ScheduleEvent(EVENT_START_3, 1s);
 						break;
 					case EVENT_START_3:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_1);
 						events.ScheduleEvent(EVENT_SPAWN_WAVE, 6s);
 						events.ScheduleEvent(EVENT_TURN_TO_REND, 4s);
@@ -302,25 +302,25 @@ struct boss_rend_blackhand : public BossAI
 						events.ScheduleEvent(EVENT_TURN_TO_FACING_2, 25s);
 						break;
 					case EVENT_TURN_TO_REND:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 						{
 							victor->SetFacingToObject(me);
 						}
 						break;
 					case EVENT_TURN_TO_PLAYER:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							if (Unit* player = victor->SelectNearestPlayer(60.0f))
 								victor->SetFacingToObject(player);
 						break;
 					case EVENT_TURN_TO_FACING_1:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->SetFacingTo(1.518436f);  // Victor Face arena
 						break;
 					case EVENT_TURN_TO_FACING_2:
 						me->SetFacingTo(1.500983f); //Rend Face Arena
 						break;
 					case EVENT_WAVES_EMOTE_1:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->HandleEmoteCommand(EMOTE_ONESHOT_QUESTION);
 						break;
 					case EVENT_WAVES_EMOTE_2:
@@ -334,14 +334,14 @@ struct boss_rend_blackhand : public BossAI
 					case EVENT_WAVES_TEXT_2:
 						events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0ms);
 						events.ScheduleEvent(EVENT_SPAWN_WAVE, 0s);
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_3);
 						events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 3s);
 						events.ScheduleEvent(EVENT_RANDOM_TALK_REND, 6s);
 						break;
 					case EVENT_WAVES_TEXT_3:
 						events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0ms);
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_4);
 						events.ScheduleEvent(EVENT_SPAWN_SPECTATOR, 0ms);						
 						events.ScheduleEvent(EVENT_SPAWN_WAVE, 2s);
@@ -356,14 +356,14 @@ struct boss_rend_blackhand : public BossAI
 						break;
 					case EVENT_WAVES_TEXT_5:
 						events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0ms);
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_5);
 						events.ScheduleEvent(EVENT_SPAWN_WAVE, 1s);
 						events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 3s);
 						events.ScheduleEvent(EVENT_RANDOM_TALK_VICTOR, 6s);
 						break;
 					case EVENT_WAVES_COMPLETE_TEXT_1:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_7);
 						events.ScheduleEvent(EVENT_WAVES_COMPLETE_TEXT_2, 1s);							
 						break;
@@ -373,12 +373,12 @@ struct boss_rend_blackhand : public BossAI
 						events.ScheduleEvent(EVENT_WAVES_COMPLETE_TEXT_3, 4s);
 						break;
 					case EVENT_WAVES_COMPLETE_TEXT_3:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_8);
 						events.ScheduleEvent(EVENT_PATH_NEFARIUS, 1s);
 						break;
 					case EVENT_PATH_NEFARIUS:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 						{
 							victor->GetMotionMaster()->MoveWaypoint(NEFARIUS_PATH_1, true);
 							victor->AI()->Talk(SAY_NEFARIUS_6);
@@ -397,19 +397,19 @@ struct boss_rend_blackhand : public BossAI
 						me->SummonCreature(NPC_GYTH, 211.762f, -397.5885f, 111.1817f, 4.747295f);
 						break;
 					case EVENT_RP_NEFARIUS_1:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_20);
 						break;
 					case EVENT_RP_NEFARIUS_2:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_21);
 						break;
 					case EVENT_RP_NEFARIUS_3:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_22);
 						break;
 					case EVENT_RP_NEFARIUS_4:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_23);
 						break;
 					case EVENT_RP_REND_1:
@@ -419,7 +419,7 @@ struct boss_rend_blackhand : public BossAI
 						Talk(SAY_BLACKHAND_6);
 						break;								
 					case EVENT_STOP_MOVEMENT_1:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 						{
 							victor->GetMotionMaster()->Clear();
 							victor->GetMotionMaster()->MoveIdle();
@@ -429,14 +429,14 @@ struct boss_rend_blackhand : public BossAI
 						events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 0s);
 						break;
 					case EVENT_RANDOM_TALK_VICTOR:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_2);
 						break;
 					case EVENT_RANDOM_TALK_REND:
 						Talk(SAY_BLACKHAND_4);
 						break;
 					case EVENT_RANDOM_TAUNT_VICTOR:
-						if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
+						if (Creature* victor = ObjectAccessor::GetCreature(*me, _victorGUID))
 							victor->AI()->Talk(SAY_NEFARIUS_19);
 						break;
 					case EVENT_RANDOM_TAUNT_REND:

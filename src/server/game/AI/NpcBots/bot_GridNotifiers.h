@@ -703,7 +703,7 @@ class CastingUnitCheck
             if (spellInfo->HasEffect(SPELL_EFFECT_INTERRUPT_CAST) && spellInfo->GetFirstRankSpell()->Id != 853) //hammer of justice
             {
                 if (u->GetTypeId() == TYPEID_UNIT &&
-                    (u->ToCreature()->GetCreatureTemplate()->MechanicImmuneMask & (1 << (MECHANIC_INTERRUPT - 1))))
+                    (u->ToCreature()->HasMechanicTemplateImmunity(UI64LIT(1) << MECHANIC_INTERRUPT)))
                     return false;
 
                 for (uint8 i = CURRENT_FIRST_NON_MELEE_SPELL; i != CURRENT_AUTOREPEAT_SPELL; ++i)
@@ -734,7 +734,7 @@ class CastingUnitCheck
             if (silenceSpell)
             {
                 if (u->GetTypeId() == TYPEID_UNIT &&
-                    (u->ToCreature()->GetCreatureTemplate()->MechanicImmuneMask & (1 << (MECHANIC_SILENCE - 1))))
+                    (u->ToCreature()->HasMechanicTemplateImmunity(UI64LIT(1) << MECHANIC_SILENCE)))
                     return false;
 
                 for (uint8 i = CURRENT_FIRST_NON_MELEE_SPELL; i != CURRENT_AUTOREPEAT_SPELL; ++i)

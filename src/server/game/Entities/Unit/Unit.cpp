@@ -11847,7 +11847,7 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced)
         && !IsPet()
         && !(IsControlledByPlayer() && IsVehicle())
         && !(creature->HasMechanicTemplateImmunity(UI64LIT(1) << MECHANIC_SNARE))
-        && !(creature->IsDungeonBoss()))
+        && !(creature->IsDungeonBoss())
         //npcbots: prevent slowing due to health percentage
         && !creature->IsNPCBot())
         //end npcbot

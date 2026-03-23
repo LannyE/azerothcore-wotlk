@@ -492,7 +492,7 @@ public:
                 me->IsWithinMeleeRange(u) && me->IsValidAttackTarget(u))
             {
                 SpellInfo const* damageSpellInfo = sSpellMgr->AssertSpellInfo(SPIKED_CARAPACE_DAMAGE);
-                if (u->IsImmunedToDamage(damageSpellInfo))
+                if (u->IsImmunedToSpell(damageSpellInfo))
                 {
                     me->SendSpellDamageImmune(u, SPIKED_CARAPACE_DAMAGE);
                 }

@@ -114,8 +114,9 @@ public:
     void LoadSpellTemplateImmunity();
     //npcbot
     /*
-    bool IsImmunedToSpell(SpellInfo const* spellInfo, Spell const* spell = nullptr) const override;
+    bool IsImmunedToSpell(SpellInfo const* spellInfo, Spell const* spell = nullptr) override;
     */
+    bool IsImmunedToSpell(SpellInfo const* spellInfo, Spell const* spell = nullptr) const override;
     //end npcbot
 
     [[nodiscard]] bool HasMechanicTemplateImmunity(uint64 mask) const;
