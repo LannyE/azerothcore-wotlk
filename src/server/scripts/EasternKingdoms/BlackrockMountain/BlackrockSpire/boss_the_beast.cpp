@@ -108,210 +108,177 @@ private:
 // Used to make Hodir disengage whenever he leaves his room
 constexpr static float FirewalPositionY = -505.f;
 
-class boss_the_beast : public CreatureScript
+struct boss_the_beast : public BossAI
 {
-public:
-    boss_the_beast() : CreatureScript("boss_the_beast") { }
+    boss_the_beast(Creature* creature) : BossAI(creature, DATA_THE_BEAST), _beastReached(false), _orcYelled(false) {}
 
-    CreatureAI* GetAI(Creature* creature) const override
+    void Reset() override
     {
-        return GetBlackrockSpireAI<boss_thebeastAI>(creature);
+        _Reset();
+
+        if (_beastReached)
+            me->GetMotionMaster()->MoveWaypoint(BEAST_MOVEMENT_ID, true);
     }
 
-    struct boss_thebeastAI : public BossAI
+    void JustEngagedWith(Unit* /*who*/) override
     {
-        boss_thebeastAI(Creature* creature) : BossAI(creature, DATA_THE_BEAST), _beastReached(false), _orcYelled(false) {}
+        _JustEngagedWith();
+        events.ScheduleEvent(EVENT_FLAME_BREAK, 12s);
+        events.ScheduleEvent(EVENT_IMMOLATE, 3s);
+        events.ScheduleEvent(EVENT_TERRIFYING_ROAR, 23s);
+        events.ScheduleEvent(EVENT_BERSERKER_CHARGE, 2s);
+        events.ScheduleEvent(EVENT_FIREBALL, 8s, 21s);
+        events.ScheduleEvent(EVENT_FIREBLAST, 5s, 8s);
+    }
 
-        void Reset() override
+    void SetData(uint32 type, uint32 /*data*/) override
+    {
+        switch (type)
         {
-            _Reset();
-
-            if (_beastReached)
+            case DATA_BEAST_ROOM:
             {
-                me->GetMotionMaster()->MoveWaypoint(BEAST_MOVEMENT_ID, true);
-            }
-        }
-
-        void JustEngagedWith(Unit* /*who*/) override
-        {
-            _JustEngagedWith();
-            events.ScheduleEvent(EVENT_FLAME_BREAK, 12s);
-            events.ScheduleEvent(EVENT_IMMOLATE, 3s);
-            events.ScheduleEvent(EVENT_TERRIFYING_ROAR, 23s);
-            events.ScheduleEvent(EVENT_BERSERKER_CHARGE, 2s);
-            events.ScheduleEvent(EVENT_FIREBALL, 8s, 21s);
-            events.ScheduleEvent(EVENT_FIREBLAST, 5s, 8s);
-        }
-
-        void SetData(uint32 type, uint32 /*data*/) override
-        {
-            switch (type)
-            {
-                case DATA_BEAST_ROOM:
+                if (!_orcYelled)
                 {
-                    if (!_orcYelled)
+                    if (_nearbyOrcsGUIDs.empty())
+                        FindNearbyOrcs();
+
+                    //! vector still empty, creatures are missing
+                    if (_nearbyOrcsGUIDs.empty())
+                        return;
+
+                    _orcYelled = true;
+                    _PreEvent = true; // Lanny
+						
+                    bool yelled = false;
+                    for (ObjectGuid guid : _nearbyOrcsGUIDs)
                     {
-                        if (_nearbyOrcsGUIDs.empty())
+                        if (Creature* orc = ObjectAccessor::GetCreature(*me, guid))
                         {
-                            FindNearbyOrcs();
-                        }
-
-                        //! vector still empty, creatures are missing
-                        if (_nearbyOrcsGUIDs.empty())
-                        {
-                            return;
-                        }
-
-                        _orcYelled = true;
-                        _PreEvent = true; // Lanny
-
-                        bool yelled = false;
-                        for (ObjectGuid guid : _nearbyOrcsGUIDs)
-                        {
-                            if (Creature* orc = ObjectAccessor::GetCreature(*me, guid))
+                            if (!yelled)
                             {
-                                if (!yelled)
-                                {
-                                    yelled = true;
                                     // Lanny
                                     // orc->AI()->Talk(SAY_BLACKHAND_DOOMED);
                                     orc->m_Events.AddEvent(new OrcSayEvent(orc), me->m_Events.CalculateTime(6 * IN_MILLISECONDS));
                                     events.ScheduleEvent(EVENT_EMOTE, 8s);
                                     // End Lanny
-                                }
-
-                                orc->m_Events.AddEventAtOffset(new OrcMoveEvent(orc), 3s);
-                                orc->m_Events.AddEventAtOffset(new OrcDeathEvent(orc), 9s);
                             }
+
+                            orc->m_Events.AddEventAtOffset(new OrcMoveEvent(orc), 3s);
+                            orc->m_Events.AddEventAtOffset(new OrcDeathEvent(orc), 9s);
                         }
                     }
-                    break;
                 }
-                case DATA_BEAST_REACHED:
+                break;
+            }
+            case DATA_BEAST_REACHED:
+            {
+                if (!_beastReached)
                 {
-                    if (!_beastReached)
-                    {
-                        _beastReached = true;
-                        me->GetMotionMaster()->MoveWaypoint(BEAST_MOVEMENT_ID, true);
+                    _beastReached = true;
+                    me->GetMotionMaster()->MoveWaypoint(BEAST_MOVEMENT_ID, true);
 
-                        // There is a chance player logged in between areatriggers (realm crash or restart)
-                        // executing part of script which happens when player enters boss room
-                        // otherwise we will see weird behaviour when someone steps on the previous areatrigger (dead mob yelling/moving)
-                        SetData(DATA_BEAST_ROOM, DATA_BEAST_ROOM);
-                    }
-                    break;
+                    // There is a chance player logged in between areatriggers (realm crash or restart)
+                    // executing part of script which happens when player enters boss room
+                    // otherwise we will see weird behaviour when someone steps on the previous areatrigger (dead mob yelling/moving)
+                    SetData(DATA_BEAST_ROOM, DATA_BEAST_ROOM);
                 }
+                break;
             }
         }
+    }
 
-        void UpdateAI(uint32 diff) override
-        {
-            // Lanny
-            if (_PreEvent)
-            {			
-                events.Update(diff);
+    void UpdateAI(uint32 diff) override
+    {
 
-                while (uint32 eventId = events.ExecuteEvent())
-                {
-                    switch (eventId)
-                    {
-                        case EVENT_EMOTE:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
-                            me->PlayDirectSound(SOUND_BEAST_ROAR, 0);
-							_PreEvent = false;
-                            break;
-                    }
-                }
-            }
-            // End Lanny NPCBot
-
-            if (!UpdateVictim())
-            {
-                return;
-            }
-
-            if (me->GetPositionY() > FirewalPositionY)
-            {
-                EnterEvadeMode();
-                return;
-            }
-
+        // Lanny
+        if (_PreEvent)
+        {			
             events.Update(diff);
-
-            if (me->HasUnitState(UNIT_STATE_CASTING))
-            {
-                return;
-            }
 
             while (uint32 eventId = events.ExecuteEvent())
             {
                 switch (eventId)
                 {
-                    case EVENT_FLAME_BREAK:
-                        DoCastVictim(SPELL_FLAMEBREAK);
-                        events.ScheduleEvent(EVENT_FLAME_BREAK, 10s);
-                        break;
-                    case EVENT_IMMOLATE:
-                        DoCastRandomTarget(SPELL_IMMOLATE, 0, 100.0f);
-                        events.ScheduleEvent(EVENT_IMMOLATE, 8s);
-                        break;
-                    case EVENT_TERRIFYING_ROAR:
-                        DoCastVictim(SPELL_TERRIFYINGROAR);
-                        events.ScheduleEvent(EVENT_TERRIFYING_ROAR, 20s);
-                        break;
-                    case EVENT_BERSERKER_CHARGE:
-                        if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 38.f, true))
-                        {
-                            DoCast(target, SPELL_BERSERKER_CHARGE);
-                        }
-                        events.ScheduleEvent(EVENT_BERSERKER_CHARGE, 15s, 23s);
-                        break;
-                    case EVENT_FIREBALL:
-                        DoCastVictim(SPELL_FIREBALL);
-                        events.ScheduleEvent(EVENT_FIREBALL, 8s, 21s);
-                        if (events.GetTimeUntilEvent(EVENT_FIREBLAST) < 3s)
-                        {
-                            events.RescheduleEvent(EVENT_FIREBLAST, 3s);
-                        }
-                        break;
-                    case EVENT_FIREBLAST:
-                        DoCastVictim(SPELL_FIREBLAST);
-                        events.ScheduleEvent(EVENT_FIREBLAST, 5s, 8s);
-                        if (events.GetTimeUntilEvent(EVENT_FIREBALL) < 3s)
-                        {
-                            events.RescheduleEvent(EVENT_FIREBALL, 3s);
-                        }
-                        break;
-                }
-
-                if (me->HasUnitState(UNIT_STATE_CASTING))
-                {
-                    return;
+                    case EVENT_EMOTE:
+                        me->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+                        me->PlayDirectSound(SOUND_BEAST_ROAR, 0);
+        				_PreEvent = false;
+                       break;
                 }
             }
-
-            DoMeleeAttackIfReady();
         }
+        // End Lanny NPCBot
 
-        void FindNearbyOrcs()
+        if (!UpdateVictim())
+            return;
+
+        if (me->GetPositionY() > FirewalPositionY)
         {
-            std::list<Creature*> temp;
-            me->GetCreatureListWithEntryInGrid(temp, NPC_BLACKHAND_ELITE, 50.0f);
-            for (Creature* creature : temp)
-            {
-                if (creature->IsAlive())
-                {
-                    _nearbyOrcsGUIDs.push_back(creature->GetGUID());
-                }
-            }
+            EnterEvadeMode();
+            return;
         }
 
-    private:
-        bool _PreEvent; // Lanny
-        bool _beastReached;
-        bool _orcYelled;
-        GuidVector _nearbyOrcsGUIDs;
-    };
+        events.Update(diff);
+
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+
+        while (uint32 eventId = events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_FLAME_BREAK:
+                    DoCastVictim(SPELL_FLAMEBREAK);
+                    events.ScheduleEvent(EVENT_FLAME_BREAK, 10s);
+                    break;
+                case EVENT_IMMOLATE:
+                    DoCastRandomTarget(SPELL_IMMOLATE, 0, 100.0f);
+                    events.ScheduleEvent(EVENT_IMMOLATE, 8s);
+                    break;
+                case EVENT_TERRIFYING_ROAR:
+                    DoCastVictim(SPELL_TERRIFYINGROAR);
+                    events.ScheduleEvent(EVENT_TERRIFYING_ROAR, 20s);
+                    break;
+                case EVENT_BERSERKER_CHARGE:
+                    if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 38.f, true))
+                        DoCast(target, SPELL_BERSERKER_CHARGE);
+                    events.ScheduleEvent(EVENT_BERSERKER_CHARGE, 15s, 23s);
+                    break;
+                case EVENT_FIREBALL:
+                    DoCastVictim(SPELL_FIREBALL);
+                    events.ScheduleEvent(EVENT_FIREBALL, 8s, 21s);
+                    if (events.GetTimeUntilEvent(EVENT_FIREBLAST) < 3s)
+                        events.RescheduleEvent(EVENT_FIREBLAST, 3s);
+                    break;
+                case EVENT_FIREBLAST:
+                    DoCastVictim(SPELL_FIREBLAST);
+                    events.ScheduleEvent(EVENT_FIREBLAST, 5s, 8s);
+                    if (events.GetTimeUntilEvent(EVENT_FIREBALL) < 3s)
+                        events.RescheduleEvent(EVENT_FIREBALL, 3s);
+                    break;
+            }
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+        }
+
+        DoMeleeAttackIfReady();
+    }
+
+    void FindNearbyOrcs()
+    {
+        std::list<Creature*> temp;
+        me->GetCreatureListWithEntryInGrid(temp, NPC_BLACKHAND_ELITE, 50.0f);
+        for (Creature* creature : temp)
+            if (creature->IsAlive())
+                _nearbyOrcsGUIDs.push_back(creature->GetGUID());
+    }
+
+private:
+    bool _PreEvent; // Lanny
+    bool _beastReached;
+    bool _orcYelled;
+    GuidVector _nearbyOrcsGUIDs;
 };
 
 //! The beast room areatrigger, this one triggers boss pathing. (AT Id 2066)
@@ -323,16 +290,12 @@ public:
     bool OnTrigger(Player* player, AreaTrigger const* /*at*/) override
     {
         if (player->IsGameMaster())
-        {
             return false;
-        }
 
         if (InstanceScript* instance = player->GetInstanceScript())
         {
             if (Creature* beast = ObjectAccessor::GetCreature(*player, instance->GetGuidData(DATA_THE_BEAST)))
-            {
                 beast->AI()->SetData(DATA_BEAST_REACHED, DATA_BEAST_REACHED);
-            }
 
             return true;
         }
@@ -349,16 +312,12 @@ public:
     bool OnTrigger(Player* player, AreaTrigger const* /*at*/) override
     {
         if (player->IsGameMaster())
-        {
             return false;
-        }
 
         if (InstanceScript* instance = player->GetInstanceScript())
         {
             if (Creature* beast = ObjectAccessor::GetCreature(*player, instance->GetGuidData(DATA_THE_BEAST)))
-            {
                 beast->AI()->SetData(DATA_BEAST_ROOM, DATA_BEAST_ROOM);
-            }
 
             return true;
         }
@@ -369,7 +328,7 @@ public:
 
 void AddSC_boss_thebeast()
 {
-    new boss_the_beast();
+    RegisterBlackrockSpireCreatureAI(boss_the_beast);
     new at_trigger_the_beast_movement();
     new at_the_beast_room();
 }

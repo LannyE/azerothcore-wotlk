@@ -207,7 +207,6 @@ struct CreatureTemplate
     float   speed_swim;
     float   speed_flight;
     float   detection_range;                                // Detection Range for Line of Sight aggro
-    float   scale;
     uint32  rank;
     uint32  dmgschool;
     float   DamageModifier;
@@ -242,8 +241,7 @@ struct CreatureTemplate
     bool    RacialLeader;
     uint32  movementId;
     bool    RegenHealth;
-    uint32  MechanicImmuneMask;
-    uint8   SpellSchoolImmuneMask;
+    int32   CreatureImmunitiesId;
     uint32  flags_extra;
     uint32  ScriptID;
     WorldPacket queryData; // pussywizard
