@@ -119,7 +119,7 @@ public:
 /*######
 # npc_kservant
 ######*/
-
+/* Lanny NPCBot SAI
 enum KServant
 {
     SAY1       = 0,
@@ -256,7 +256,7 @@ public:
         void Reset() override { }
     };
 };
-
+*/ // End Lanny NPCBot SAI
 enum ShattrathQuests
 {
     // QuestID : Creature Template ID
@@ -417,6 +417,6 @@ void AddSC_shattrath_city()
 {
     new npc_shattrathflaskvendors();
     new npc_zephyr();
-    new npc_kservant();
+    // new npc_kservant(); // Lanny NPCBot SAI
     RegisterCreatureAI(npc_shattrath_daily_quest);
 }
