@@ -103,8 +103,9 @@
 #include "GridNotifiersImpl.h"
 
 //npcbot
-#include "botmgr.h"
+#include "botconfig.h"
 #include "botdatamgr.h"
+#include "botmgr.h"
 //end npcbot
 
 enum CharacterFlags
@@ -2385,7 +2386,7 @@ void Player::RemoveFromGroup(Group* group, ObjectGuid guid, RemoveMethod method 
         else if (guid.IsPlayer())
         {
             std::vector<ObjectGuid> botguids;
-            botguids.reserve(BotMgr::GetMaxNpcBots(DEFAULT_MAX_LEVEL) / 2 + 1);
+            botguids.reserve(BotCfg::GetMaxNpcBots(DEFAULT_MAX_LEVEL) / 2 + 1);
             BotDataMgr::GetNPCBotGuidsByOwner(botguids, guid, true);
             for (std::vector<ObjectGuid>::const_iterator ci = botguids.begin(); ci != botguids.end(); ++ci)
             {
@@ -6269,7 +6270,7 @@ bool Player::RewardHonor(Unit* uVictim, uint32 groupsize, int32 honor, bool awar
         {
             static const float WANDERING_BOT_HONOR_GAIN_MULT = 10.0f;
 
-            if (!BotMgr::IsBotHKEnabled())
+            if (!BotCfg::IsBotHKEnabled())
                 return false;
 
             Creature const* bot = uVictim->ToCreature();
@@ -6285,16 +6286,16 @@ bool Player::RewardHonor(Unit* uVictim, uint32 groupsize, int32 honor, bool awar
             if (v_level <= k_grey)
                 return false;
 
-            if (!BotMgr::IsBotHKMessageEnabled())
+            if (!BotCfg::IsBotHKMessageEnabled())
                 victim_guid.Clear(); // Don't show HK: <rank> message, only log.
 
             //TODO: honor gain rate
             honor_f = ceil(Acore::Honor::hk_honor_at_level_f(k_level) * (v_level - k_grey) / (k_level - k_grey));
-            honor_f *= BotMgr::GetBotHKHonorRate();
+            honor_f *= BotCfg::GetBotHKHonorRate();
             if (bot->IsWandererBot() && !bot->GetBotBG())
                 honor_f *= WANDERING_BOT_HONOR_GAIN_MULT;
 
-            if (BotMgr::IsBotHKAchievementsEnabled())
+            if (BotCfg::IsBotHKAchievementsEnabled())
             {
                 ApplyModUInt32Value(PLAYER_FIELD_KILLS, 1, true);
                 ApplyModUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, 1, true);

@@ -2898,12 +2898,13 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
                 if (caster->IsPlayer() && m_spellInfo->HasAttribute(SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT) == 0 &&
                         m_spellInfo->HasAttribute(SPELL_ATTR4_SUPPRESS_WEAPON_PROCS) == 0 && (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED))
                     caster->ToPlayer()->CastItemCombatSpell(unitTarget, m_attackType, procVictim, dmgInfo.GetHitMask());
-                //npcbot
-                if (caster->IsNPCBot() &&
-                    !m_spellInfo->HasAttribute(SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT) && !m_spellInfo->HasAttribute(SPELL_ATTR4_SUPPRESS_WEAPON_PROCS) &&
-                    (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED))
-                    caster->ToCreature()->CastCreatureItemCombatSpell(dmgInfo);
-                //end npcbot
+
+            //npcbot
+            if (caster->IsNPCBot() &&
+                !m_spellInfo->HasAttribute(SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT) && !m_spellInfo->HasAttribute(SPELL_ATTR4_SUPPRESS_WEAPON_PROCS) &&
+                (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED))
+                caster->ToCreature()->CastCreatureItemCombatSpell(dmgInfo);
+            //end npcbot
             }
 
             m_damage = damageInfo.damage;
@@ -9386,14 +9387,14 @@ namespace Acore
         }
         else if (!target->IsWithinDist3d(_position, _range))
             return false;
-        //npcbot: custom check 2 for targeting bots by spells with SPELL_ATTR3_ONLY_ON_PLAYER
-        else if (_spellInfo->HasAttribute(SPELL_ATTR3_ONLY_ON_PLAYER) && target->GetTypeId() == TYPEID_UNIT && !target->IsNPCBot())
-            return false;
-        //end npcbot
         else if (Creature* c = target->ToCreature())
         {
             if (c->IsAvoidingAOE()) // pussywizard
                 return false;
+            //npcbot: custom check 2 for targeting bots by spells with SPELL_ATTR3_ONLY_ON_PLAYER
+            if (_spellInfo->HasAttribute(SPELL_ATTR3_ONLY_ON_PLAYER) && !target->IsNPCBot())
+                return false;
+            //end npcbot
             if (CreatureImmunities const* immunities = sSpellMgr->GetCreatureImmunities(c->GetCreatureTemplate()->CreatureImmunitiesId))
             {
                 switch (_searchReason)
