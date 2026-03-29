@@ -445,6 +445,7 @@ enum L70ETCMusicEvents
     EVENT_ETC_START_MUSIC = 1
 };
 
+// Lanny NPCBot Changed music to within a radius and not be zonewide for Worlds End Tavern 
 class go_l70_etc_music : public GameObjectScript
 {
 public:
@@ -464,15 +465,29 @@ public:
             {
                 switch (eventId)
                 {
-                case EVENT_ETC_START_MUSIC:
-                    if (me->GetMapId() == MAP_BLACKROCK_DEPTHS)
-                        me->PlayDirectMusic(MUSIC_L70_ETC_MUSIC_LOUD);
-                    else
-                        me->PlayDirectMusic(MUSIC_L70_ETC_MUSIC);
-                    _events.ScheduleEvent(EVENT_ETC_START_MUSIC, 1600ms);  // Every 1.6 seconds SMSG_PLAY_MUSIC packet (PlayDirectMusic) is pushed to the client (sniffed value)
-                    break;
-                default:
-                    break;
+                    case EVENT_ETC_START_MUSIC:
+                    {
+                        // Define the range for Worlds End Tavern
+                        float range = 100.0f;
+
+                        // We iterate through all players on the current Map (Shattrath/BRD)
+                        for (auto const& it : me->GetMap()->GetPlayers())
+                        {
+                            if (Player* player = it.GetSource())
+                            {
+                                if (me->GetMapId() == MAP_BLACKROCK_DEPTHS)
+                                    player->PlayDirectMusic(MUSIC_L70_ETC_MUSIC_LOUD);
+                                else if (me->GetDistance(player) <= range)
+                                {
+                                    player->PlayDirectMusic(MUSIC_L70_ETC_MUSIC);
+                                }
+                            }
+                        }
+                        _events.ScheduleEvent(EVENT_ETC_START_MUSIC, 1600ms);  // Every 1.6 seconds SMSG_PLAY_MUSIC packet (PlayDirectMusic) is pushed to the client (sniffed value)
+                        break;
+                    }
+                    default:
+                        break;
                 }
             }
         }
@@ -484,7 +499,7 @@ public:
     {
         return new go_l70_etc_musicAI(go);
     }
-};
+}; // End Lanny NPCBot
 
 /*####
 ## go_brewfest_music
