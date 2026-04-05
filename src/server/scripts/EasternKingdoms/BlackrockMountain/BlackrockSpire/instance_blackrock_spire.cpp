@@ -547,6 +547,21 @@ struct instance_blackrock_spire : public InstanceScript
                         CurrentSolakarWave++;
                     }
                     break;
+                //Lanny
+                case EVENT_NEFARIUS_REND_SAY:
+                    if (Creature* nefarius = instance->GetCreature(LordVictorNefarius))
+                    {
+                        nefarius->AI()->Talk(SAY_NEFARIUS_REND_DONE);
+                        if (Unit* player = nefarius->SelectNearestPlayer(60.0f))
+                            nefarius->SetFacingToObject(player);
+                    }
+                    Events.ScheduleEvent(EVENT_NEFARIUS_TELEPORT, 5s);						
+                    break;
+                case EVENT_NEFARIUS_TELEPORT:
+                    if (Creature* nefarius = instance->GetCreature(LordVictorNefarius))
+                        nefarius->CastSpell(nefarius, SPELL_TELEPORT_EFFECT, true);
+                    break;
+                 //End Lanny NPCbot
                 default:
                     break;
             }
@@ -624,21 +639,6 @@ struct instance_blackrock_spire : public InstanceScript
                     case GO_HALL_RUNE_7:
                         SetBossState(DATA_HALL_RUNE_7, DONE);
                         break;
-                    //Lanny
-                    case EVENT_NEFARIUS_REND_SAY:
-                        if (Creature* nefarius = instance->GetCreature(LordVictorNefarius))
-                        {
-                            nefarius->AI()->Talk(SAY_NEFARIUS_REND_DONE);
-                            if (Unit* player = nefarius->SelectNearestPlayer(60.0f))
-                                nefarius->SetFacingToObject(player);
-                        }
-                        Events.ScheduleEvent(EVENT_NEFARIUS_TELEPORT, 5s);						
-                        break;
-                    case EVENT_NEFARIUS_TELEPORT:
-                        if (Creature* nefarius = instance->GetCreature(LordVictorNefarius))
-                            nefarius->CastSpell(nefarius, SPELL_TELEPORT_EFFECT, true);
-                        break;
-                    //End Lanny NPCbot
                     default:
                         break;
                 }
