@@ -2375,8 +2375,11 @@ void Player::RemoveFromGroup(Group* group, ObjectGuid guid, RemoveMethod method 
         {
             if (player->HaveBot())
             {
-                //remove npcbots and set up new group if needed
-                player->GetBotMgr()->RemoveAllBotsFromGroup();
+                bool lfg_group = group->isLFGGroup();
+                    //remove npcbots and set up new group if needed
+                    player->GetBotMgr()->RemoveAllBotsFromGroup();
+                if (lfg_group)
+                    player->GetBotMgr()->RemoveAllSummonedBots();
                 group = player->GetGroup();
                 if (!group)
                     return; //group has been disbanded

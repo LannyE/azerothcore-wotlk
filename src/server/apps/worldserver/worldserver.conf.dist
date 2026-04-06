@@ -5304,7 +5304,14 @@ NpcBot.OwnershipExpireMode = 0
 #                     0 - (Disabled)
 
 NpcBot.EnrageOnDismiss = 1
- 
+
+#
+#    NpcBot.DungeonBots.Enable
+#        Description: Allow autogenerating bots for non-full LFG groups entering non-raid dungeons
+#        Default:     0 - (NpcBot.DungeonBots.Enable)
+
+NpcBot.DungeonBots.Enable = 0
+
 #
 #    NpcBot.WanderingBots.Continents.Count
 #        Description: Desired number of free wandering bots to generate. Wandering bots roam
