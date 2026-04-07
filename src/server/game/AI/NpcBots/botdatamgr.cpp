@@ -727,7 +727,7 @@ public:
                 {
                     NpcBotExtras const* orig_extras = ASSERT_NOTNULL(BotDataMgr::SelectNpcBotExtras(spareBotId));
                     const uint32 bot_faction = BotDataMgr::GetDefaultFactionForBotRaceClass(orig_extras->bclass, orig_extras->race);
-                    const uint32 botTeam = BotDataMgr::GetTeamForFaction(bot_faction);
+                    const uint32 botTeam = BotDataMgr::GetTeamIdForFaction(bot_faction);
 
                     if (botTeam != static_cast<uint32>(owner->GetTeamId()))
                         continue;
@@ -1897,7 +1897,7 @@ void BotDataMgr::GenerateDungeonBots(Player const* leader, Group const* group, M
     using enum lfg::LfgRoles;
     using roles_arr = std::array<uint8, 3>;
 
-    if (!BotCfg::IsNpcBotDungeonFinderBotGenerationEnabled())
+    if (!BotCfg::IsNpcBotModEnabled() || !BotCfg::IsNpcBotDungeonFinderBotGenerationEnabled())
         return;
 
     if (!group->isLFGGroup())

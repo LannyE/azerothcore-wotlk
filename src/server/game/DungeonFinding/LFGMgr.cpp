@@ -861,7 +861,7 @@ namespace lfg
         //npcbot
         const uint32 PLAYER_ROLE_ANY = PLAYER_ROLE_TANK | PLAYER_ROLE_HEALER | PLAYER_ROLE_DAMAGE;
         auto try_generate_fake_dungeon_bots = [gguid, isContinue, &dungeons, this](LfgRoleCheck& role_check) {
-            if (BotCfg::IsNpcBotDungeonFinderBotGenerationEnabled() && role_check.roles.size() < std::size_t(MAXGROUPSIZE))
+            if (BotCfg::IsNpcBotModEnabled() && BotCfg::IsNpcBotDungeonFinderBotGenerationEnabled() && role_check.roles.size() < std::size_t(MAXGROUPSIZE))
             {
                 const uint32 fake_entry = BOT_GIVER_ENTRY;
                 ObjectGuid::LowType counter = 1;
@@ -947,7 +947,7 @@ namespace lfg
             UpdateRoleCheck(gguid, guid, roles);
         }
         //npcbot
-        else if (BotCfg::IsNpcBotDungeonFinderBotGenerationEnabled())
+        else if (BotCfg::IsNpcBotModEnabled() && BotCfg::IsNpcBotDungeonFinderBotGenerationEnabled())
         {
             LfgRoleCheck& roleCheck = RoleChecksStore[gguid];
             roleCheck.roles.clear();
@@ -2033,7 +2033,7 @@ namespace lfg
                     // if player is debugging, don't add dungeon cooldown
                     if (!m_Testing)
                     {
-                        //player->AddAura(LFG_SPELL_DUNGEON_COOLDOWN, player);
+                        player->AddAura(LFG_SPELL_DUNGEON_COOLDOWN, player);
                     }
                 }
 
@@ -2241,11 +2241,11 @@ namespace lfg
         //end npcbot
 
         // pussywizard: add cooldown for not accepting (after 40 secs) or declining
-        //for (LfgProposalPlayerContainer::iterator it = proposal.players.begin(); it != proposal.players.end(); ++it)
-        //    if (it->second.accept == LFG_ANSWER_DENY)
-        //        if (Player* plr = ObjectAccessor::FindPlayer(it->first))
-        //            if (Aura* aura = plr->AddAura(LFG_SPELL_DUNGEON_COOLDOWN, plr))
-        //                aura->SetDuration(150 * IN_MILLISECONDS);
+        for (LfgProposalPlayerContainer::iterator it = proposal.players.begin(); it != proposal.players.end(); ++it)
+            if (it->second.accept == LFG_ANSWER_DENY)
+                if (Player* plr = ObjectAccessor::FindPlayer(it->first))
+                    if (Aura* aura = plr->AddAura(LFG_SPELL_DUNGEON_COOLDOWN, plr))
+                        aura->SetDuration(150 * IN_MILLISECONDS);
 
         // Mark players/groups to be removed
         LfgGuidSet toRemove;

@@ -137,7 +137,7 @@ namespace lfg
 
             //npcbot
             if (group->GetLeaderGUID() == player->GetGUID() && group->GetMembersCount() < MAXGROUPSIZE &&
-                BotCfg::IsNpcBotDungeonFinderBotGenerationEnabled())
+                BotCfg::IsNpcBotModEnabled() && BotCfg::IsNpcBotDungeonFinderBotGenerationEnabled())
                 BotDataMgr::GenerateDungeonBots(player, group, map);
             //end npcbot
 
