@@ -1301,8 +1301,11 @@ public:
     void SetCreator(Unit* creator);
     Unit* GetCreator() const { return m_creator; }
     Unit* m_creator = nullptr;
-    //end npcbot
 
+    void SetLastSpellGoTime(TimePoint time_point) { last_spell_go_time_point = time_point; }
+    TimePoint GetLastSpellGoTime() const { return last_spell_go_time_point; }
+    TimePoint last_spell_go_time_point{};
+    //end npcbot
 
     [[nodiscard]] uint32 GetMeleeCritDamageReduction(uint32 damage) const { return GetCombatRatingDamageReduction(CR_CRIT_TAKEN_MELEE, 2.2f, 33.0f, damage); }
     [[nodiscard]] uint32 GetRangedCritDamageReduction(uint32 damage) const { return GetCombatRatingDamageReduction(CR_CRIT_TAKEN_RANGED, 2.2f, 33.0f, damage); }
