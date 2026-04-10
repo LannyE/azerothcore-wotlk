@@ -485,7 +485,7 @@ void bot_ai::ResetBotAI(uint8 resetType)
     if (spawned)
         ReturnHome();
 
-    if (!me->IsInWorld() || resetType == BOTAI_RESET_FORCERECALL)
+    if ((!me->IsInWorld() || resetType == BOTAI_RESET_FORCERECALL) && !me->IsSummon())
     {
         TeleportHomeStart(resetType != BOTAI_RESET_UNBIND);
     }
@@ -1504,7 +1504,7 @@ void bot_ai::ResurrectGroup(uint32 spell_id)
         Player* player = master;
         if (!player->IsAlive() && !player->isResurrectRequested() && !player->GetUInt32Value(PLAYER_SELF_RES_SPELL))
         {
-            Unit* target = player->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST) ? player->ToUnit() : (Unit*)player->GetCorpse();
+            Unit* target = !player->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST) ? player->ToUnit() : (Unit*)player->GetCorpse();
             if (target && target->IsInWorld() && me->GetMap() == target->FindMap() &&
                 !player->GetBotMgr()->IsBeingResurrected(target))
             {
@@ -1545,7 +1545,7 @@ void bot_ai::ResurrectGroup(uint32 spell_id)
                 Bots = true;
             if (player->IsAlive() || player->isResurrectRequested() || player->GetUInt32Value(PLAYER_SELF_RES_SPELL)) continue;
 
-            Unit* target = player->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST) ? player->ToUnit() : (Unit*)player->GetCorpse();
+            Unit* target = !player->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST) ? player->ToUnit() : (Unit*)player->GetCorpse();
 
             if (!target || !target->IsInWorld()) continue;
             if (target->GetTypeId() != player->GetTypeId() && me->GetMap() != target->FindMap()) continue;
@@ -9171,6 +9171,7 @@ bool bot_ai::OnGossipSelect(Player* player, Creature* creature/* == me*/, uint32
                             if (BotCfg::SendEquipListItems())
                                 BotWhisper(name.view(), player);
                             AddGossipItemFor(player, GOSSIP_ICON_CHAT, name.str(), GOSSIP_SENDER_EQUIP + slot, GOSSIP_ACTION_INFO_DEF + pItem->GetGUID().GetCounter());
+                            name.str("");
                             ++counter;
                             return true;
                         }
@@ -9399,6 +9400,7 @@ bool bot_ai::OnGossipSelect(Player* player, Creature* creature/* == me*/, uint32
                                 if (BotCfg::SendEquipListItems())
                                     BotWhisper(name.view(), player);
                                 AddGossipItemFor(player, GOSSIP_ICON_CHAT, name.str(), GOSSIP_SENDER_EQUIP_AUTOEQUIP_EQUIP + slot, GOSSIP_ACTION_INFO_DEF + guidlow);
+                                name.str("");
                                 ++counter;
                                 return true;
                             }
@@ -19981,11 +19983,11 @@ WanderNode const* bot_ai::GetNextBGTravelNode() const
                 if (myTeamId != teamId)
                     continue;
 
-                uint8 unowned_points_mask = 0;
+                uint32 unowned_points_mask = 0;
                 for (uint8 index : NPCBots::index_array<uint8, EY_POINTS_MAX>)
                     if (ey->GetPointOwner(index) != myTeamId)
-                        unowned_points_mask |= static_cast<uint8>(1u << index);
-                if (unowned_points_mask)
+                        unowned_points_mask |= 1u << index;
+                if (!unowned_points_mask)
                 {
                     WanderNode const* lockWP = WanderNode::FindInMapWPs(me->GetMapId(), [=](WanderNode const* mwp) {
                         return mwp->HasAllFlags(myTeamId == TEAM_ALLIANCE ? BotWPFlags::BOTWP_FLAG_SPAWN_INTERCEPT_ALLIANCE : BotWPFlags::BOTWP_FLAG_SPAWN_INTERCEPT_HORDE);
@@ -20008,11 +20010,11 @@ WanderNode const* bot_ai::GetNextBGTravelNode() const
                     if (!((1u << index) & unowned_points_mask))
                         continue;
                     uint8 attackers_count = std::ranges::count_if(team_members, [=, this](Unit const* m) {
-                        return (m != me && (m->GetExactDist2dSq(BG_EY_TriggerPositions[index][0], BG_EY_TriggerPositions[index][1]) < std::pow(static_cast<float>(BG_EY_POINT_RADIUS), 2.f) * 0.5f ||
-                            (m->IsNPCBot() && m->GetExactDist2dSq(BG_EY_TriggerPositions[index][0], BG_EY_TriggerPositions[index][1]) < me->GetExactDist2d(BG_EY_TriggerPositions[index][0], BG_EY_TriggerPositions[index][1]))));
+                        return (m != me && (m->GetExactDist2dSq(BG_EY_TriggerPositions[index][0], BG_EY_TriggerPositions[index][1]) < std::pow(float(BG_EY_POINT_RADIUS) * 0.5f, 2.f) ||
+                            (m->IsNPCBot() && m->GetExactDist2dSq(BG_EY_TriggerPositions[index][0], BG_EY_TriggerPositions[index][1]) < me->GetExactDist2dSq(BG_EY_TriggerPositions[index][0], BG_EY_TriggerPositions[index][1]))));
                     });
-                    if (attackers_count < uint8(team_members.size() / 5u + 1u))
-                        attackable_points_mask |= static_cast<uint8>(1u << index);
+                    if (attackers_count < team_members.size() / 5u + 1u)
+                        attackable_points_mask |= 1u << index;
                 }
                 NodeList attackableWPs;
                 WanderNode::DoForAllMapWPs(bg->GetMapId(), [&attackableWPs](WanderNode const* dwp) {
