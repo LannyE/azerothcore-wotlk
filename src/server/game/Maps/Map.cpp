@@ -1879,20 +1879,16 @@ uint32 Map::GetPlayersCountExceptGMs(bool aliveOnly /*= false*/) const
     for (auto const& ref : m_mapRefMgr)
         if (Player* player = ref.GetSource())
             if (!player->IsGameMaster() && (!aliveOnly || (player->IsAlive() && !player->HasSpiritOfRedemptionAura())))
-            //npcbot - count npcbots as group members (event if not in group)
+            //npcbot - count npcbots (event if not in group)
             {
-                if (itr->GetSource()->HaveBot() && BotMgr::LimitBots(this))
+                if (player->HaveBot() && BotMgr::LimitBots(this))
                 {
-                    ++count;
-                    BotMap const* botmap = itr->GetSource()->GetBotMgr()->GetBotMap();
-                    for (BotMap::const_iterator itr = botmap->begin(); itr != botmap->end(); ++itr)
+                    for (auto const& [bguid, bot] : *player->GetBotMgr()->GetBotMap())
                     {
-                        Creature* cre = itr->second;
-                        if (!cre || !cre->IsInWorld() || cre->FindMap() != this || cre->IsTempBot())
+                        if (!bot || !bot->IsInWorld() || bot->FindMap() != this || bot->IsTempBot() || (aliveOnly && (!bot->IsAlive() || bot->HasSpiritOfRedemptionAura())))
                             continue;
                         ++count;
                     }
-                    continue;
                 }
             //end npcbot
                 ++count;
