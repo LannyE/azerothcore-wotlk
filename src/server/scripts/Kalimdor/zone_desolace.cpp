@@ -21,7 +21,7 @@
 #include "ScriptedEscortAI.h"
 #include "ScriptedGossip.h"
 #include "SpellInfo.h"
-
+/*
 enum Caravan
 {
     QUEST_BODYGUARD_FOR_HIRE            = 5821,
@@ -408,7 +408,7 @@ public:
         }
     };
 };
-
+*/
 enum DyingKodo
 {
     SAY_SMEED_HOME                  = 0,
@@ -496,6 +496,6 @@ struct npc_aged_dying_ancient_kodo : public ScriptedAI
 
 void AddSC_desolace()
 {
-    new npc_cork_gizelton();
+    // new npc_cork_gizelton();
     RegisterCreatureAI(npc_aged_dying_ancient_kodo);
 }
