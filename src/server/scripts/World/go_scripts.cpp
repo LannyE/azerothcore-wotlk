@@ -1574,7 +1574,8 @@ public:
 enum AmberpineOuthouse
 {
     QUEST_DOING_YOUR_DUTY           = 12227,
-    SPELL_INDISPOSED                = 53017,
+    SPELL_INDISPOSED_MALE           = 48323,
+    SPELL_INDISPOSED_FEMALE         = 53017,
     SPELL_INDISPOSED_II             = 48324,
     SPELL_INDISPOSED_III            = 48341,
     GOSSIP_OUTHOUSE_INUSE           = 12775,
@@ -1607,7 +1608,17 @@ public:
         if (action == GOSSIP_ACTION_INFO_DEF + 1)
         {
             CloseGossipMenuFor(player);
-            player->CastSpell(player, SPELL_INDISPOSED);
+            switch (player->getGender())
+            {
+            case GENDER_FEMALE:
+                player->CastSpell(player, SPELL_INDISPOSED_FEMALE);
+                break;
+            case GENDER_MALE:
+                player->CastSpell(player, SPELL_INDISPOSED_MALE);
+                break;
+            default:
+                break;
+            }
             player->CastSpell(player, SPELL_INDISPOSED_II);
             player->CastSpell(player, SPELL_INDISPOSED_III);
             return true;
