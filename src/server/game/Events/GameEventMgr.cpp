@@ -1517,29 +1517,41 @@ void GameEventMgr::GameEventUnspawn(int16 eventId)
         return;
     }
 
-    for (GuidLowList::iterator itr = GameEventCreatureGuids[internal_event_id].begin(); itr != GameEventCreatureGuids[internal_event_id].end(); ++itr)
+    // Lanny
+    for (auto itr = GameEventCreatureGuids[internal_event_id].begin(); itr != GameEventCreatureGuids[internal_event_id].end(); ++itr)
     {
-        // check if it's needed by another event, if so, don't remove
-        if (eventId > 0 && HasCreatureActiveEventExcept(*itr, eventId))
+        CreatureData const* data = sObjectMgr->GetCreatureData(*itr);
+        if (!data)
             continue;
 
-        // Remove the creature from grid
-        if (CreatureData const* data = sObjectMgr->GetCreatureData(*itr))
-        {
-            sObjectMgr->RemoveCreatureFromGrid(*itr, data);
+        uint32 spawnId = *itr; // Capture the spawn ID by value
 
-            sMapMgr->DoForAllMapsWithMapId(data->mapid, [&itr](Map* map)
+        // 1. Thread Safety: Defer to the Map Thread
+        sMapMgr->DoForAllMapsWithMapId(data->mapid, [spawnId](Map* map)
             {
-                auto creatureBounds = map->GetCreatureBySpawnIdStore().equal_range(*itr);
-                for (auto itr2 = creatureBounds.first; itr2 != creatureBounds.second;)
-                {
-                    Creature* creature = itr2->second;
-                    ++itr2;
-                    creature->AddObjectToRemoveList();
-                }
+                map->Events.AddEvent([map, spawnId]()
+                    {
+                        // 2. Iterator Safety: Take a snapshot of the live creatures
+                        std::vector<Creature*> creaturesToRemove;
+                        auto creatureBounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+                        for (auto itr2 = creatureBounds.first; itr2 != creatureBounds.second; ++itr2)
+                        {
+                            creaturesToRemove.push_back(itr2->second);
+                        }
+
+                        // 3. Safely flag them for removal
+                        for (Creature* creature : creaturesToRemove)
+                        {
+                            if (creature)
+                                creature->AddObjectToRemoveList();
+                        }
+                    }, Seconds(0));
             });
-        }
+
+        // 4. Order of Operations: Remove from grid AFTER queuing the map despawn
+        sObjectMgr->RemoveCreatureFromGrid(spawnId, data);
     }
+    // End Lanny
 
     if (internal_event_id >= int32(GameEventGameobjectGuids.size()))
     {
@@ -1877,24 +1889,40 @@ void GameEventMgr::SendWorldStateUpdate(Player* player, uint16 eventId)
 class GameEventAIHookWorker
 {
 public:
-    GameEventAIHookWorker(uint16 eventId, bool activate) : _eventId(eventId), _activate(activate) { }
+    // Lanny
+    GameEventAIHookWorker(uint16 eventId, bool activate) : _eventId(eventId), _activate(activate) {}
 
     void Visit(std::unordered_map<ObjectGuid, Creature*>& creatureMap)
     {
+        std::vector<Creature*> creatures;
+        creatures.reserve(creatureMap.size());
         for (auto const& p : creatureMap)
-            if (p.second->IsInWorld() && !p.second->IsDuringRemoveFromWorld() && p.second->FindMap() && p.second->IsAIEnabled && p.second->AI())
-                p.second->AI()->sOnGameEvent(_activate, _eventId);
+            creatures.push_back(p.second);
+
+        for (Creature* creature : creatures)
+        {
+            if (creature->IsInWorld() && !creature->IsDuringRemoveFromWorld() && creature->FindMap() && creature->IsAIEnabled && creature->AI())
+                creature->AI()->sOnGameEvent(_activate, _eventId);
+        }
     }
 
     void Visit(std::unordered_map<ObjectGuid, GameObject*>& gameObjectMap)
     {
+        std::vector<GameObject*> gameObjects;
+        gameObjects.reserve(gameObjectMap.size());
         for (auto const& p : gameObjectMap)
-            if (p.second->IsInWorld() && p.second->FindMap() && p.second->AI())
-                p.second->AI()->OnGameEvent(_activate, _eventId);
+            gameObjects.push_back(p.second);
+
+        for (GameObject* go : gameObjects)
+        {
+            if (go->IsInWorld() && go->FindMap() && go->AI())
+                go->AI()->OnGameEvent(_activate, _eventId);
+        }
     }
 
     template<class T>
-    void Visit(std::unordered_map<ObjectGuid, T*>&) { }
+    void Visit(std::unordered_map<ObjectGuid, T*>&) {}
+    // End Lanny
 
 private:
     uint16 _eventId;
@@ -1907,9 +1935,14 @@ void GameEventMgr::RunSmartAIScripts(uint16 eventId, bool activate)
     //! Not entirely sure how this will affect units in non-loaded grids.
     sMapMgr->DoForAllMaps([eventId, activate](Map* map)
     {
-        GameEventAIHookWorker worker(eventId, activate);
-        TypeContainerVisitor<GameEventAIHookWorker, MapStoredObjectTypesContainer> visitor(worker);
-        visitor.Visit(map->GetObjectsStore());
+        // Lanny
+        map->Events.AddEvent([map, eventId, activate]()
+        {
+            GameEventAIHookWorker worker(eventId, activate);
+            TypeContainerVisitor<GameEventAIHookWorker, MapStoredObjectTypesContainer> visitor(worker);
+            visitor.Visit(map->GetObjectsStore());
+        }, Seconds(0)); // immediate on map's event loop
+        // End Lanny
     });
 }
 
