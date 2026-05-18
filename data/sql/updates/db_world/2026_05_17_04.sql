@@ -1,5 +1,6 @@
 -- DB update 2026_05_17_03 -> 2026_05_17_04
 --
+/*
 -- Griselda Hunderland → Talker: 26043
 DELETE FROM `creature_text` WHERE (`CreatureID` = 26043);
 INSERT INTO `creature_text` (`CreatureID`, `GroupID`, `ID`, `Text`, `Type`, `Language`, `Probability`, `Emote`, `Duration`, `Sound`, `BroadcastTextId`, `TextRange`, `comment`) VALUES
@@ -49,3 +50,4 @@ INSERT INTO `creature_text` (`CreatureID`, `GroupID`, `ID`, `Text`, `Type`, `Lan
 (28355, 5, 2, 'Greetings! Please have a look around.', 12, 7, 100, 3, 0, 0, 43333, 0, 'Miles Sidney'),
 (28355, 5, 3, 'Let me know if you need help finding anything, $c.', 12, 7, 100, 3, 0, 0, 43335, 0, 'Miles Sidney'),
 (28355, 5, 4, 'Welcome. May I help you find something?', 12, 7, 100, 3, 0, 0, 43336, 0, 'Miles Sidney');
+*/
