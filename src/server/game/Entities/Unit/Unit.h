@@ -1680,6 +1680,14 @@ public:
     //end npcbot
     //npcbot
     /*
+    bool IsImmunedToSpell(SpellInfo const* spellInfo, Unit const* caster);
+    bool IsImmunedToSpell(SpellInfo const* spellInfo, Unit const* caster, SpellSchoolMask spellSchoolMask);
+    */
+    bool IsImmunedToSpell(SpellInfo const* spellInfo, Unit const* caster) const;
+    bool IsImmunedToSpell(SpellInfo const* spellInfo, Unit const* caster, SpellSchoolMask spellSchoolMask) const;
+    //end npcbot	
+    //npcbot
+    /*
     bool IsImmunedToSpell(SpellInfo const* spellInfo, uint32 effectMask, Unit const* caster = nullptr);
     */
     bool IsImmunedToSpell(SpellInfo const* spellInfo, uint32 effectMask, Unit const* caster = nullptr) const;
