@@ -1444,27 +1444,24 @@ void GameEventMgr::GameEventSpawn(int16 eventId)
         return;
     }
 
-    // Lanny
     for (GuidLowList::iterator itr = GameEventCreatureGuids[internal_event_id].begin(); itr != GameEventCreatureGuids[internal_event_id].end(); ++itr)
     {
-        CreatureData const* data = sObjectMgr->GetCreatureData(*itr);
-        if (!data)
-            continue;
+        // Add to correct cell
+        if (CreatureData const* data = sObjectMgr->GetCreatureData(*itr))
+        {
+            sObjectMgr->AddCreatureToGrid(*itr, data);
 
-        uint32 spawnId = *itr;
-        if (Map* map = sMapMgr->FindBaseMap(data->mapid))
-        {
-            map->Events.AddEvent([spawnId, data]()
+            // Spawn if necessary (loaded grids only)
+            Map* map = sMapMgr->CreateBaseMap(data->mapid);
+            // We use spawn coords to spawn
+            if (!map->Instanceable() && map->IsGridLoaded(data->posX, data->posY))
             {
-                sObjectMgr->AddCreatureToGrid(spawnId, data);
-            }, Seconds(0));
-        }
-        else
-        {
-            sObjectMgr->AddCreatureToGrid(spawnId, data);
+                Creature* creature = new Creature;
+                if (!creature->LoadCreatureFromDB(*itr, map))
+                    delete creature;
+            }
         }
     }
-    // End Lanny
 
     if (internal_event_id >= int32(GameEventGameobjectGuids.size()))
     {
@@ -1473,27 +1470,30 @@ void GameEventMgr::GameEventSpawn(int16 eventId)
         return;
     }
 
-    // Lanny
     for (GuidLowList::iterator itr = GameEventGameobjectGuids[internal_event_id].begin(); itr != GameEventGameobjectGuids[internal_event_id].end(); ++itr)
     {
-        GameObjectData const* data = sObjectMgr->GetGameObjectData(*itr);
-        if (!data)
-            continue;
-
-        uint32 spawnId = *itr;
-        if (Map* map = sMapMgr->FindBaseMap(data->mapid))
+        // Add to correct cell
+        if (GameObjectData const* data = sObjectMgr->GetGameObjectData(*itr))
         {
-            map->Events.AddEvent([spawnId, data]()
+            sObjectMgr->AddGameobjectToGrid(*itr, data);
+            // Spawn if necessary (loaded grids only)
+            // this base map checked as non-instanced and then only existed
+            Map* map = sMapMgr->CreateBaseMap(data->mapid);
+            // We use current coords to unspawn, not spawn coords since creature can have changed grid
+            if (!map->Instanceable() && map->IsGridLoaded(data->posX, data->posY))
             {
-                sObjectMgr->AddGameobjectToGrid(spawnId, data);
-            }, Seconds(0));
-        }
-        else
-        {
-            sObjectMgr->AddGameobjectToGrid(spawnId, data);
+                GameObject* pGameobject = sObjectMgr->IsGameObjectStaticTransport(data->id) ? new StaticTransport() : new GameObject();
+                //TODO: find out when it is add to map
+                if (!pGameobject->LoadGameObjectFromDB(*itr, map, false))
+                    delete pGameobject;
+                else
+                {
+                    if (pGameobject->isSpawnedByDefault())
+                        map->AddToMap(pGameobject);
+                }
+            }
         }
     }
-    // End Lanny
 
     if (internal_event_id >= int32(_gameEventPoolIds.size()))
     {
