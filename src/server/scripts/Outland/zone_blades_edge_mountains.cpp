@@ -26,12 +26,6 @@
 #include "SpellInfo.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
-//Lanny
-#include "Player.h"
-#include "GameTime.h"
-#include "GameEventMgr.h"
-#include <ctime>
-// End Lanny
 
 /// @todo: this import is not necessary for compilation and marked as unused by the IDE
 //  however, for some reasons removing it would cause a damn linking issue
@@ -1149,96 +1143,6 @@ class spell_oscillating_field : public SpellScript
     }
 };
 
-// Lanny
-enum BashirLandingData
-{
-    QUEST_SABOTAGE_BASHIR_LANDING = 11119,
-    GOSSIP_TEXT_LAUNCHING_ASSAULT = 11056,
-    GOSSIP_TEXT_STUDYING_FORGE    = 11066,
-    WORLD_STATE_BASHIR_TIMER      = 4581,
-    GAME_EVENT_BASHIR_LANDING     = 248
-};
-
-class npc_aether_tech_apprentice : public CreatureScript
-{
-public:
-    npc_aether_tech_apprentice() : CreatureScript("npc_aether_tech_apprentice") { }
-
-    bool OnGossipHello(Player* player, Creature* creature) override
-    {
-        if (creature->IsQuestGiver())
-            player->PrepareQuestMenu(creature->GetGUID());
-
-        // Check if the player has completed quest 11119
-        if (player->GetQuestRewardStatus(QUEST_SABOTAGE_BASHIR_LANDING))
-        {
-            // Calculate time left in minutes for the 2-hour cycle
-            time_t now = GameTime::GetGameTime().count();
-            tm* ltime = localtime(&now);
-
-            uint32 minutesLeft = 60 - ltime->tm_min;
-            if (ltime->tm_hour % 2 != 0) // Odd hour rollover
-            {
-                minutesLeft += 60;
-            }
-
-            // Bound-safe check to ensure we stay within our SQL matrix (1 to 120)
-            if (minutesLeft < 1)   minutesLeft = 1;
-            if (minutesLeft > 120) minutesLeft = 120;
-
-            // THE FIX: Point the client to the exact custom text ID matching the minutes left
-            uint32 dynamicTextId = 91100 + minutesLeft;
-
-            // Send the menu completely naturally. No options are attached, so it won't be clickable.
-            SendGossipMenuFor(player, dynamicTextId, creature->GetGUID());
-        }
-        else
-        {
-            // Show standard fallback text (11066) if they haven't done the prerequisite quest
-            SendGossipMenuFor(player, GOSSIP_TEXT_STUDYING_FORGE, creature->GetGUID());
-        }
-
-        return true;
-    }
-
-    struct npc_aether_tech_apprenticeAI : public ScriptedAI
-    {
-        npc_aether_tech_apprenticeAI(Creature* creature) : ScriptedAI(creature)
-        {
-            _checkTimer = 1000;
-        }
-
-        uint32 _checkTimer;
-
-        void UpdateAI(uint32 diff) override
-        {
-            if (_checkTimer <= diff)
-            {
-                _checkTimer = 1000;
-
-                if (!sGameEventMgr->IsActiveEvent(GAME_EVENT_BASHIR_LANDING))
-                {
-                    time_t now = GameTime::GetGameTime().count();
-                    tm* ltime = localtime(&now);
-
-                    if (ltime->tm_hour % 2 != 0 && ltime->tm_min == 0)
-                    {
-                        sGameEventMgr->StartEvent(GAME_EVENT_BASHIR_LANDING, true);
-                    }
-                }
-            }
-            else
-                _checkTimer -= diff;
-        }
-    };
-
-    CreatureAI* GetAI(Creature* creature) const override
-    {
-        return new npc_aether_tech_apprenticeAI(creature);
-    }
-};
-// End Lanny
-
 void AddSC_blades_edge_mountains()
 {
     new npc_deaths_door_fell_cannon_target_bunny();
@@ -1251,5 +1155,4 @@ void AddSC_blades_edge_mountains()
     new go_apexis_relic();
     new npc_oscillating_frequency_scanner_master_bunny();
     RegisterSpellScript(spell_oscillating_field);
-    new npc_aether_tech_apprentice(); // Lanny
 }
