@@ -1811,7 +1811,7 @@ bool Creature::LoadCreatureFromDB(ObjectGuid::LowType spawnId, Map* map, bool ad
     }
 
     //npcbot
-    if (BotDataMgr::SelectNpcBotData(data->id1))
+    if (BotDataMgr::SelectNpcBotData(data->id))
         return false;
     //end npcbot
 
@@ -4183,7 +4183,7 @@ bool Creature::LoadBotCreatureFromDB(ObjectGuid::LowType spawnId, Map* map, bool
 
     if (!Create(map->GenerateLowGuid<HighGuid::Unit>(), map,
         data ? data->phaseMask : PHASEMASK_NORMAL,
-        data ? data->id1 : entry, 0,
+        data ? data->id : entry, 0,
         data ? data->posX : pos->m_positionX, data ? data->posY : pos->m_positionY,
         data ? data->posZ : pos->m_positionZ, data ? data->orientation : pos->GetOrientation(),
         data))
