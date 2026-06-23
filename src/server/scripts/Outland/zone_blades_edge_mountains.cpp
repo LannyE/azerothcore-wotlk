@@ -26,6 +26,12 @@
 #include "SpellInfo.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
+//Lanny
+#include "Player.h"
+#include "GameTime.h"
+#include "GameEventMgr.h"
+#include <ctime>
+// End Lanny
 
 /// @todo: this import is not necessary for compilation and marked as unused by the IDE
 //  however, for some reasons removing it would cause a damn linking issue
@@ -1143,6 +1149,205 @@ class spell_oscillating_field : public SpellScript
     }
 };
 
+// Lanny
+enum BashirLandingData
+{
+    GOSSIP_TEXT_STUDYING_FORGE    = 11066,
+    GAME_EVENT_BASHIR_LANDING     = 248
+};
+
+class npc_aether_tech_apprentice : public CreatureScript
+{
+public:
+    npc_aether_tech_apprentice() : CreatureScript("npc_aether_tech_apprentice") { }
+
+    bool OnGossipHello(Player* player, Creature* creature) override
+    {
+        // REQUIRED: Wipe the client's gossip cache first. 
+        // Continually opening/closing the menu without this causes the UI to crash to "Greetings Jimguy"
+        ClearGossipMenuFor(player);
+
+        if (creature->IsQuestGiver())
+            player->PrepareQuestMenu(creature->GetGUID());
+
+        time_t now = GameTime::GetGameTime().count();
+        tm* ltime = localtime(&now); // Evaluates strictly against Realm (Server OS) Time
+
+        bool isOddHour = (ltime->tm_hour % 2 != 0);
+        
+        // Mask the 30-second GameEventMgr lag: if it's the exact top of the odd hour,
+        // assume the event is active regardless of the background manager's delay.
+        bool justStarted = (isOddHour && ltime->tm_min == 0);
+
+        if ((isOddHour && sGameEventMgr->IsActiveEvent(GAME_EVENT_BASHIR_LANDING)) || justStarted)
+        {
+            // The event IS active. Show standard text (11066)
+            SendGossipMenuFor(player, GOSSIP_TEXT_STUDYING_FORGE, creature->GetGUID());
+            return true;
+        }
+
+        // --- Countdown Logic ---
+        // If we are here, we are counting down to the next odd hour.
+        // If it's an even hour, the next start is 0 hours away + remaining minutes.
+        // If it's an odd hour (and event ended early), the next start is 1 hour away + remaining minutes.
+        uint32 hoursUntilNext = isOddHour ? 1 : 0;
+        
+        // Precise seconds calculation prevents the rounding gap
+        uint32 secondsLeftInHour = ((59 - ltime->tm_min) * 60) + (60 - ltime->tm_sec);
+        uint32 totalSecondsLeft = (hoursUntilNext * 3600) + secondsLeftInHour;
+        
+        // Ceiling division so 1m 1s shows as "2 minutes", transitioning perfectly to "1 minute" at exactly 60s
+        uint32 minutesLeft = (totalSecondsLeft + 59) / 60; 
+
+        if (minutesLeft < 1) minutesLeft = 1;
+
+        uint32 dynamicTextId = 0;
+
+        if (minutesLeft >= 90)
+            dynamicTextId = 91161; // "2 hours" message
+        else if (minutesLeft >= 60)
+            dynamicTextId = 91160; // "1 hour" message
+        else
+            dynamicTextId = 91100 + minutesLeft; // Route to individual minute texts (91101 to 91159)
+
+        SendGossipMenuFor(player, dynamicTextId, creature->GetGUID());
+        return true;
+    }
+
+    struct npc_aether_tech_apprenticeAI : public ScriptedAI
+    {
+        npc_aether_tech_apprenticeAI(Creature* creature) : ScriptedAI(creature)
+        {
+            _checkTimer = 1000;
+            _hasTriggeredThisCycle = false;
+
+            // Keeps the grid loaded so the 1-minute window is never missed
+            me->setActive(true);
+        }
+
+        uint32 _checkTimer;
+        bool _hasTriggeredThisCycle;
+
+        void UpdateAI(uint32 diff) override
+        {
+            if (_checkTimer <= diff)
+            {
+                _checkTimer = 1000;
+
+                time_t now = GameTime::GetGameTime().count();
+                tm* ltime = localtime(&now); // Strictly Realm Time
+
+                if (ltime->tm_hour % 2 == 0)
+                {
+                    // It is an Even hour (e.g., 12:XX PM). 
+                    // Reset the trigger so the NPC is fully armed for the next Odd hour.
+                    _hasTriggeredThisCycle = false;
+                }
+                else
+                {
+                    // It is an Odd hour (e.g., 1:XX PM).
+                    // STRICT CHECK: Only allow the event to start if we are in the 0th minute (e.g., 1:00:00 to 1:00:59).
+                    // This creates exactly a 1-minute tolerance window.
+                    if (ltime->tm_min == 0)
+                    {
+                        if (!_hasTriggeredThisCycle)
+                        {
+                            // Lock the trigger instantly so it only fires StartEvent exactly ONCE per cycle.
+                            _hasTriggeredThisCycle = true;
+
+                            if (!sGameEventMgr->IsActiveEvent(GAME_EVENT_BASHIR_LANDING))
+                            {
+                                sGameEventMgr->StartEvent(GAME_EVENT_BASHIR_LANDING, true);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+                _checkTimer -= diff;
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const override
+    {
+        return new npc_aether_tech_apprenticeAI(creature);
+    }
+};
+
+class spell_bashir_disruptor_explosion : public SpellScriptLoader
+{
+public:
+    spell_bashir_disruptor_explosion() : SpellScriptLoader("spell_bashir_disruptor_explosion") { }
+
+    class spell_bashir_disruptor_explosion_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_bashir_disruptor_explosion_SpellScript);
+
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            Unit* caster = GetCaster();
+            if (!caster)
+                return;
+
+            // Calculate the radius of the explosion from Effect 0
+            float radius = GetSpellInfo()->GetEffects()[EFFECT_0].CalcRadius(caster);
+
+            // The three Skyguard NPC entries requested
+            uint32 const skyguardEntries[] = { 23241, 23242, 23430 };
+
+            for (uint32 entry : skyguardEntries)
+            {
+                std::list<Creature*> creatures;
+                
+                // Fetch all creatures matching the entry around the caster. 
+                // We use radius + 5.0f to give the grid search a slight buffer.
+                caster->GetCreatureListWithEntryInGrid(creatures, entry, radius + 5.0f);
+
+                for (Creature* creature : creatures)
+                {
+                    // Check if alive and within the exact spell radius of the caster
+                    if (creature->IsAlive() && caster->GetExactDist2d(creature) <= radius)
+                    {
+                        // Ensure we don't add duplicates
+                        if (std::find(targets.begin(), targets.end(), creature) == targets.end())
+                        {
+                            targets.push_back(creature);
+                        }
+                    }
+                }
+            }
+        }
+
+        void Register() override
+        {
+            // We ONLY hook the target selection for EFFECT_0 (Damage).
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_bashir_disruptor_explosion_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_bashir_disruptor_explosion_SpellScript();
+    }
+};
+
+class spell_ethereal_ring_signal_flare : public SpellScript
+{
+    PrepareSpellScript(spell_ethereal_ring_signal_flare);
+
+    void SetDest(SpellDestination& dest)
+    {
+        // Directly override the Z coordinate to force the flare high into the sky
+        dest._position.m_positionZ = 342.9485f;
+    }
+
+    void Register() override
+    {
+        OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_ethereal_ring_signal_flare::SetDest, EFFECT_0, TARGET_DEST_CASTER_RANDOM);
+    }
+};
+// End Lanny
+
 void AddSC_blades_edge_mountains()
 {
     new npc_deaths_door_fell_cannon_target_bunny();
@@ -1155,4 +1360,7 @@ void AddSC_blades_edge_mountains()
     new go_apexis_relic();
     new npc_oscillating_frequency_scanner_master_bunny();
     RegisterSpellScript(spell_oscillating_field);
+    new npc_aether_tech_apprentice(); // Lanny
+    new spell_bashir_disruptor_explosion(); //Lanny
+    RegisterSpellScript(spell_ethereal_ring_signal_flare); // Lanny
 }
