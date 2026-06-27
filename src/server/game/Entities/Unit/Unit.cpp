@@ -1325,7 +1325,7 @@ uint32 Unit::DealDamage(Unit* attacker, Unit* victim, uint32 damage, CleanDamage
             bool damagedByPlayer = unDamage && attacker && (attacker->IsPlayer() || attacker->m_movedByPlayer != nullptr
                 || attacker->GetCharmerGUID().IsPlayer());
             //npcbot: npcbots' damage allways counts towards damage requirement
-            damagedByPlayer |= attacker && attacker->IsNPCBotOrPet();
+            damagedByPlayer |= unDamage && attacker && attacker->IsNPCBotOrPet();
             //end npcbot
 
             uint8 attackerLevel = 0;
