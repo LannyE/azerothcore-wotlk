@@ -1164,7 +1164,7 @@ public:
     bool OnGossipHello(Player* player, Creature* creature) override
     {
         // REQUIRED: Wipe the client's gossip cache first. 
-        // Continually opening/closing the menu without this causes the UI to crash to "Greetings Jimguy"
+        // Continually opening/closing the menu without this causes the UI to crash to "Greetings"
         ClearGossipMenuFor(player);
 
         if (creature->IsQuestGiver())
@@ -1346,6 +1346,80 @@ class spell_ethereal_ring_signal_flare : public SpellScript
         OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_ethereal_ring_signal_flare::SetDest, EFFECT_0, TARGET_DEST_CASTER_RANDOM);
     }
 };
+
+class spell_resonance_feedback : public SpellScriptLoader
+{
+public:
+    spell_resonance_feedback() : SpellScriptLoader("spell_resonance_feedback") { }
+
+    class spell_resonance_feedback_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_resonance_feedback_SpellScript);
+
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            // We use remove_if with a lambda to cleanly filter out the specific entries
+            targets.remove_if([](WorldObject* obj)
+            {
+                if (Creature* creature = obj->ToCreature())
+                {
+                    // If the creature is one of our three target entries, return true to remove them from the list
+                    if (creature->GetEntry() == 23444 || creature->GetEntry() == 23445 || creature->GetEntry() == 23154)
+                        return true; 
+                }
+                return false; 
+            });
+        }
+
+        void Register() override
+        {
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_resonance_feedback_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_resonance_feedback_SpellScript();
+    }
+};
+
+class spell_ethereal_ring_visual : public SpellScriptLoader
+{
+public:
+    spell_ethereal_ring_visual() : SpellScriptLoader("spell_ethereal_ring_visual") { }
+
+    class spell_ethereal_ring_visual_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_ethereal_ring_visual_SpellScript);
+
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            // Remove any target that is NOT creature 23444
+            targets.remove_if([](WorldObject* obj)
+            {
+                if (Creature* creature = obj->ToCreature())
+                {
+                    // If it IS creature 23444, return false so it does NOT get removed
+                    if (creature->GetEntry() == 23444)
+                        return false; 
+                }
+                
+                // If it is any other creature or object, return true to remove it from the target list
+                return true; 
+            });
+        }
+
+        void Register() override
+        {
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_ethereal_ring_visual_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_ethereal_ring_visual_SpellScript();
+    }
+};
 // End Lanny
 
 void AddSC_blades_edge_mountains()
@@ -1360,7 +1434,11 @@ void AddSC_blades_edge_mountains()
     new go_apexis_relic();
     new npc_oscillating_frequency_scanner_master_bunny();
     RegisterSpellScript(spell_oscillating_field);
-    new npc_aether_tech_apprentice(); // Lanny
-    new spell_bashir_disruptor_explosion(); //Lanny
-    RegisterSpellScript(spell_ethereal_ring_signal_flare); // Lanny
+    // Lanny
+    new npc_aether_tech_apprentice();
+    new spell_bashir_disruptor_explosion();
+    RegisterSpellScript(spell_ethereal_ring_signal_flare);
+    new spell_resonance_feedback();
+    new spell_ethereal_ring_visual();
+    // End Lanny
 }
