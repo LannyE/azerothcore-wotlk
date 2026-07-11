@@ -931,9 +931,6 @@ namespace lfg
                         SetState(bguid, LFG_STATE_ROLECHECK);
                         if (!isContinue)
                             SetSelectedDungeons(bguid, dungeons);
-                        if (!debugNames.empty())
-                            debugNames.append(", ");
-                        debugNames.append(bot->GetName());
 
                         uint8 broles = PLAYER_ROLE_ANY & ~PLAYER_ROLE_LEADER;
                         if (!!(roles & PLAYER_ROLE_TANK) || !(bot->GetBotRoles() & BOT_ROLE_TANK))
@@ -975,7 +972,6 @@ namespace lfg
             if (!isContinue)
                 SetSelectedDungeons(guid, dungeons);
             roleCheck.roles[guid] = 0;
-            debugNames.append(player->GetName());
             try_generate_fake_dungeon_bots(roleCheck);
             UpdateRoleCheck(gguid, guid, roles);
         }
