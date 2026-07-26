@@ -1,5 +1,6 @@
 -- DB update 2026_07_25_06 -> 2026_07_25_07
 --
+/*
 DELETE FROM `creature_formations` WHERE `memberGUID` IN (6877,6880,6883,6885,6886);
 INSERT INTO `creature_formations` (`leaderGUID`, `memberGUID`, `dist`, `angle`, `groupAI`, `point_1`, `point_2`) VALUES
 (6885,6877,12,180,515,0,0),
@@ -38,3 +39,4 @@ INSERT INTO `waypoint_data` (`id`, `point`, `position_x`, `position_y`, `positio
 (68850,26,-6689.15,-2168.01,244.145,NULL,0,0,0,0,0,100,0),
 (68850,27,-6690.26,-2159.42,244.145,NULL,0,0,0,0,0,100,0),
 (68850,28,-6686.64,-2162.67,244.195,NULL,0,150000,0,0,0,100,0);
+*/
