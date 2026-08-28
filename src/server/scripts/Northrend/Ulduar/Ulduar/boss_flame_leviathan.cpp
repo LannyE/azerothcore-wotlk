@@ -65,6 +65,7 @@ enum LeviathanSpells
     SPELL_TOWER_OF_LIFE                 = 64482,
 
     SPELL_HODIRS_FURY                   = 62533,
+    SPELL_HODIRS_FURY_STUN              = 62297,
     SPELL_FREYA_WARD                    = 62906, // removed spawn effect
     SPELL_MIMIRONS_INFERNO              = 62909,
     SPELL_THORIMS_HAMMER                = 62911,
@@ -232,7 +233,18 @@ struct boss_flame_leviathan : public BossAI
         me->RemoveAurasDueToSpell(SPELL_GATHERING_SPEED);
     }
 
-    void MoveInLineOfSight(Unit*) override {}
+    void EnterEvadeMode(EvadeReason why = EVADE_REASON_OTHER) override
+    {
+        CreatureAI::EnterEvadeMode(why);
+    }
+
+    void MoveInLineOfSight(Unit* unit) override {
+        if (_startTimer || _speakTimer)
+            return;
+
+        BossAI::MoveInLineOfSight(unit);
+    }
+
     void JustSummoned(Creature* cr)  override
     {
         if (cr->GetEntry() != NPC_FLAME_LEVIATHAN_TURRET && cr->GetEntry() != NPC_SEAT)
@@ -294,6 +306,9 @@ struct boss_flame_leviathan : public BossAI
         summons.DoAction(ACTION_DESPAWN_ADDS);
         summons.DespawnAll();
         events.Reset();
+
+        // The stun lasts 60s and is applied to dead players too, nothing else clears it once the fight ends
+        instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HODIRS_FURY_STUN);
 
         _shutdown = false;
         _startTimer = 1;
@@ -630,6 +645,8 @@ void boss_flame_leviathan::JustDied(Unit*)
     for (Creature* creature : tarPools)
         creature->DespawnOrUnsummon();
 
+    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HODIRS_FURY_STUN);
+
     instance->SetBossState(BOSS_LEVIATHAN, DONE);
     instance->SetData(DATA_VEHICLE_SPAWN, VEHICLE_POS_NONE);
 
@@ -746,6 +763,8 @@ struct boss_flame_leviathan_seat : public VehicleAI
         who->ApplySpellImmune(63847, IMMUNITY_ID, 63847, apply); // SPELL_FLAME_VENTS_TRIGGER
         who->ApplySpellImmune(SPELL_MISSILE_BARRAGE, IMMUNITY_ID, SPELL_MISSILE_BARRAGE, apply);
         who->ApplySpellImmune(SPELL_BATTERING_RAM, IMMUNITY_ID, SPELL_BATTERING_RAM, apply);
+        // 10yd ground-level AoE that cannot reach the seats ~15yd up on the boss' back
+        who->ApplySpellImmune(SPELL_HODIRS_FURY_STUN, IMMUNITY_ID, SPELL_HODIRS_FURY_STUN, apply);
 
         if (seatId == SEAT_PLAYER)
         {
