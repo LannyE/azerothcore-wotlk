@@ -167,6 +167,7 @@ namespace Movement
         vertical_acceleration = 0.f;
         effect_start_time = 0;
         velocity = args.velocity;
+        walk = args.walk; // Lanny
 
         // Check if its a stop spline
         if (args.flags.done)
@@ -191,7 +192,10 @@ namespace Movement
     }
 
     MoveSpline::MoveSpline() : m_Id(0), time_passed(0),
-        vertical_acceleration(0.f), initialOrientation(0.f), velocity(0.f), effect_start_time(0), point_Idx(0), point_Idx_offset(0),
+        // Lanny
+        vertical_acceleration(0.f), initialOrientation(0.f), velocity(0.f), walk(false), effect_start_time(0),
+        point_Idx(0), point_Idx_offset(0),
+        // End Lanny
         onTransport(false)
     {
         splineflags.done = true;
