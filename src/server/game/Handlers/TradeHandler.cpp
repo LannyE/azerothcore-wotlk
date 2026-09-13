@@ -741,7 +741,7 @@ void WorldSession::HandleInitiateTradeOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    if (IsLoggingOut())
+    if (isLogingOut())
     {
         info.Status = TRADE_STATUS_YOU_LOGOUT;
         SendTradeStatus(info);
@@ -810,7 +810,7 @@ void WorldSession::HandleInitiateTradeOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    if (pOther->GetSession()->IsLoggingOut())
+    if (pOther->GetSession()->isLogingOut())
     {
         info.Status = TRADE_STATUS_TARGET_LOGOUT;
         SendTradeStatus(info);

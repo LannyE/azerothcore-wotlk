@@ -510,7 +510,7 @@ public:
     void SendPlayTimeWarning(PlayTimeFlag flag, int32 playTimeRemaining);
 
     /// Is the user engaged in a log out process?
-    bool IsLoggingOut() const { return _logoutTime || m_playerLogout; }
+    bool isLogingOut() const { return _logoutTime || m_playerLogout; }
 
     /// Engage the logout process for the user
     void SetLogoutStartTime(time_t requestTime)
@@ -549,7 +549,6 @@ public:
     void SendShowBank(ObjectGuid guid);
     bool CanOpenMailBox(ObjectGuid guid);
     void SendShowMailBox(ObjectGuid guid);
-    void SendMailList();
     void SendTabardVendorActivate(ObjectGuid guid);
     void SendSpiritResurrect();
     void SendBindPoint(Creature* npc);

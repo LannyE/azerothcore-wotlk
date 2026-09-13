@@ -76,9 +76,9 @@ enum FreyaSpells
     // BRIGHTLEAF
     SPELL_BRIGHTLEAF_FLUX                       = 62239,
     SPELL_SOLAR_FLARE                           = 62240,
-    // summons one beam at the caster and force-casts 62221 on every player in range,
-    // each summoning another beam at their own feet
-    SPELL_UNSTABLE_SUN_BEAM_SUMMON              = 62207,
+    SPELL_UNSTABLE_SUN_BEAM_AURA                = 62211,
+    SPELL_PHOTOSYNTHESIS                        = 62209,
+    SPELL_UNSTABLE_SUN_DAMAGE                   = 62217,
 
     // IRONBRANCH
     SPELL_IMPALE                                = 62310,
@@ -142,6 +142,7 @@ enum FreyaEvents
     EVENT_BRIGHTLEAF_FLUX                       = 20,
     EVENT_BRIGHTLEAF_SOLAR_FLARE                = 21,
     EVENT_BRIGHTLEAF_UNSTABLE_SUN_BEAM          = 22,
+    EVENT_BRIGHTLEAF_DESPAWN_SUN_BEAM           = 23,
 
     // IRONBRANCH
     EVENT_IRONBRANCH_IMPALE                     = 30,
@@ -190,6 +191,7 @@ enum FreyaNPCs
     NPC_CHANNEL_STALKER_FREYA                   = 33575,
     NPC_IRON_ROOT_TRIGGER                       = 33088,
     NPC_FREYA_UNSTABLE_SUN_BEAM                 = 33170,
+    NPC_UNSTABLE_SUN_BRIGHTLEAF                 = 33050, // 10 SECS?
 
     // FIRST WAVE
     NPC_STORM_LASHER                            = 32919,
@@ -806,15 +808,17 @@ struct boss_freya_elder_stonebark : public ScriptedAI
 
 struct boss_freya_elder_brightleaf : public ScriptedAI
 {
-    boss_freya_elder_brightleaf(Creature* pCreature) : ScriptedAI(pCreature)
+    boss_freya_elder_brightleaf(Creature* pCreature) : ScriptedAI(pCreature), summons(pCreature)
     {
     }
 
     EventMap events;
+    SummonList summons;
 
     void Reset() override
     {
         events.Reset();
+        summons.DespawnAll();
         me->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         me->SetReactState(REACT_AGGRESSIVE);
     }
@@ -847,7 +851,7 @@ struct boss_freya_elder_brightleaf : public ScriptedAI
 
         events.ScheduleEvent(EVENT_BRIGHTLEAF_FLUX, 10s);
         events.ScheduleEvent(EVENT_BRIGHTLEAF_SOLAR_FLARE, 5s);
-        events.ScheduleEvent(EVENT_BRIGHTLEAF_UNSTABLE_SUN_BEAM, 6s);
+        events.ScheduleEvent(EVENT_BRIGHTLEAF_UNSTABLE_SUN_BEAM, 8s);
 
         Talk(SAY_ELDER_AGGRO);
     }
@@ -877,8 +881,31 @@ struct boss_freya_elder_brightleaf : public ScriptedAI
                 events.Repeat(15s);
                 break;
             case EVENT_BRIGHTLEAF_UNSTABLE_SUN_BEAM:
-                DoCastAOE(SPELL_UNSTABLE_SUN_BEAM_SUMMON, true);
-                events.Repeat(22s, 26s);
+                events.ScheduleEvent(EVENT_BRIGHTLEAF_DESPAWN_SUN_BEAM, 15s);
+                if (Creature* beam = me->SummonCreature(NPC_UNSTABLE_SUN_BRIGHTLEAF, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ()))
+                {
+                    beam->CastSpell(beam, SPELL_UNSTABLE_SUN_BEAM_AURA, true);
+                    beam->CastSpell(beam, SPELL_PHOTOSYNTHESIS, true);
+                    summons.Summon(beam);
+                }
+                if (Creature* beam = me->SummonCreature(NPC_UNSTABLE_SUN_BRIGHTLEAF, me->GetPositionX() + 8, me->GetPositionY() + 8, me->GetPositionZ()))
+                {
+                    beam->CastSpell(beam, SPELL_UNSTABLE_SUN_BEAM_AURA, true);
+                    beam->CastSpell(beam, SPELL_PHOTOSYNTHESIS, true);
+                    summons.Summon(beam);
+                }
+                events.Repeat(20s);
+                break;
+            case EVENT_BRIGHTLEAF_DESPAWN_SUN_BEAM:
+                for (SummonList::iterator i = summons.begin(); i != summons.end();)
+                {
+                    Creature* summon = ObjectAccessor::GetCreature(*me, *i);
+                    ++i;
+                    if (summon)
+                        summon->CastSpell(summon, SPELL_UNSTABLE_SUN_DAMAGE, false);
+                }
+
+                summons.DespawnAll();
                 break;
         }
 

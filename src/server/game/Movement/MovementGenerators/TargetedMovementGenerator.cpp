@@ -67,7 +67,6 @@ void ChaseMovementGenerator<T>::SetOffsetAndAngle(std::optional<ChaseRange> dist
 {
     _range = dist;
     _angle = angle;
-    _fallbackPositioning = false;
     _lastTargetPosition.reset();
 }
 
@@ -75,7 +74,6 @@ template<class T>
 void ChaseMovementGenerator<T>::SetNewTarget(Unit* target)
 {
     SetTarget(target);
-    _fallbackPositioning = false;
     _lastTargetPosition.reset();
 }
 
@@ -102,7 +100,6 @@ template<class T>
 bool ChaseMovementGenerator<T>::DispatchSplineToPosition(T* owner, float x, float y, float z, bool walk, bool cutPath, float maxTarget, bool forceDest, bool target)
 {
     Creature* cOwner = owner->ToCreature();
-    G3D::Vector3 const targetPos = GetTarget()->GetPosition();
 
     if (owner->IsHovering())
         owner->UpdateAllowedPositionZ(x, y, z);
@@ -124,7 +121,6 @@ bool ChaseMovementGenerator<T>::DispatchSplineToPosition(T* owner, float x, floa
     };
 
     bool pathFailed = !i_path->CalculatePath(x, y, z, forceDest) || !isPathUsable();
-    bool usedFallback = false;
 
     // Targets with an oversized combat reach can stand entirely over unwalkable space
     // (e.g. Kologarn) so pathing to their center or to an angled near point (pets chase
@@ -136,42 +132,15 @@ bool ChaseMovementGenerator<T>::DispatchSplineToPosition(T* owner, float x, floa
         && !GetTarget()->IsCharmedOwnedByPlayerOrPlayer() && GetTarget()->GetCombatReach() > NOMINAL_MELEE_RANGE)
     {
         GetTarget()->GetNearPoint2D(owner, x, y, 0.0f, GetTarget()->GetAngle(owner));
-        z = targetPos.z;
+        z = GetTarget()->GetPositionZ();
         owner->UpdateAllowedPositionZ(x, y, z);
-        if (std::abs(z - targetPos.z) < maxTarget)
-        {
-            pathFailed = !i_path->CalculatePath(x, y, z, forceDest) || !isPathUsable();
-            // the destination already lies on the melee ring, nothing to cut
-            cutPath = false;
-
-            if (!pathFailed)
-                usedFallback = true;
-        }
-
-        if (pathFailed)
-        {
-            // If the nearest point on the melee ring is also unpathable (e.g. Brain of Yogg-Saron
-            // where the 30yd combat reach extends beyond the room's walls into geometry, but the
-            // floor directly underneath the target is walkable), fall back to pathing directly
-            // toward the target's ground position and cut the path once within combat range.
-            float groundZ = targetPos.z;
-            owner->UpdateAllowedPositionZ(targetPos.x, targetPos.y, groundZ);
-            if (std::abs(groundZ - targetPos.z) < maxTarget)
-            {
-                x = targetPos.x;
-                y = targetPos.y;
-                z = groundZ;
-                pathFailed = !i_path->CalculatePath(x, y, z, forceDest) || !isPathUsable();
-                cutPath = true;
-                if (!pathFailed)
-                    usedFallback = true;
-            }
-        }
+        pathFailed = !i_path->CalculatePath(x, y, z, forceDest) || !isPathUsable();
+        // the destination already lies on the melee ring, nothing to cut
+        cutPath = false;
     }
 
     if (pathFailed)
     {
-        _fallbackPositioning = false;
         if (cOwner)
         {
             cOwner->SetCannotReachTarget(GetTarget()->GetGUID());
@@ -184,10 +153,8 @@ bool ChaseMovementGenerator<T>::DispatchSplineToPosition(T* owner, float x, floa
         return false;
     }
 
-    _fallbackPositioning = usedFallback;
-
     if (cutPath)
-        i_path->ShortenPathUntilDist(targetPos, maxTarget);
+        i_path->ShortenPathUntilDist(G3D::Vector3(x, y, z), maxTarget);
 
     if (cOwner)
     {
@@ -259,7 +226,7 @@ bool ChaseMovementGenerator<T>::DoUpdate(T* owner, uint32 time_diff)
     float const maxRange = _range ? _range->MaxRange + chaseRange : meleeRange; // melee range already includes hitboxes
     float const maxTarget = _range ? _range->MaxTolerance + chaseRange : CONTACT_DISTANCE + chaseRange;
 
-    Optional<ChaseAngle> angle = (mutualChase || _fallbackPositioning) ? Optional<ChaseAngle>() : _angle;
+    Optional<ChaseAngle> angle = mutualChase ? Optional<ChaseAngle>() : _angle;
 
     // Prevent almost infinite spinning of mutual targets.
     if (angle && !mutualChase && _mutualChase && mutualTarget && chaseRange < meleeRange)
@@ -338,8 +305,6 @@ bool ChaseMovementGenerator<T>::DoUpdate(T* owner, uint32 time_diff)
     {
         _lastTargetPosition = target->GetPosition();
         _mutualChase = mutualChase;
-        _fallbackPositioning = false;
-        angle = mutualChase ? Optional<ChaseAngle>() : _angle;
         if (owner->HasUnitState(UNIT_STATE_CHASE_MOVE) || !PositionOkay(owner, target, maxTarget, angle))
         {
             // can we get to the target?
@@ -427,7 +392,6 @@ void ChaseMovementGenerator<Player>::DoInitialize(Player* owner)
 {
     i_path = nullptr;
     _lastTargetPosition.reset();
-    _fallbackPositioning = false;
     owner->StopMoving();
     owner->AddUnitState(UNIT_STATE_CHASE);
 }
@@ -437,7 +401,6 @@ void ChaseMovementGenerator<Creature>::DoInitialize(Creature* owner)
 {
     i_path = nullptr;
     _lastTargetPosition.reset();
-    _fallbackPositioning = false;
     i_recheckDistance.Reset(0);
     i_leashExtensionTimer.Reset(owner->GetAttackTime(BASE_ATTACK));
     owner->AddUnitState(UNIT_STATE_CHASE);
