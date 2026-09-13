@@ -3442,6 +3442,24 @@ int32 WorldObject::CalcSpellDuration(SpellInfo const* spellProto) const
     if (Unit const* unitCaster = ToUnit())
         comboPoints = unitCaster->GetComboPoints();
 
+    //npcbot
+    if (IsNPCBot())
+        comboPoints = ToCreature()->GetCreatureComboPoints();
+    else
+    //npcbot: combo points support for spell duration (vehicle)
+    if (ToCreature() && ToCreature()->IsVehicle() && ToCreature()->GetCharmerGUID().IsCreature() &&
+        spellProto->GetDuration() != spellProto->GetMaxDuration())
+    {
+        Unit const* bot = ToCreature()->GetCharmer();
+        if (bot && bot->IsNPCBot())
+        {
+            comboPoints = bot->ToCreature()->GetCreatureComboPoints();
+            //TC_LOG_ERROR("scripts", "CalcSpellDuration bot %s veh spell %u cp %u",
+            //    bot->GetName().c_str(), spellProto->Id, uint32(comboPoints));
+        }
+    }
+    //end npcbot
+
     int32 minduration = spellProto->GetDuration();
     int32 maxduration = spellProto->GetMaxDuration();
 
@@ -3569,6 +3587,10 @@ void WorldObject::ModSpellCastTime(SpellInfo const* spellInfo, int32& castTime, 
     if (Player* modOwner = GetSpellModOwner())
         /// @todo:(MadAgos) Eventually check and delete the bool argument
         modOwner->ApplySpellMod(spellInfo->Id, SPELLMOD_CASTING_TIME, castTime, spell, bool(modOwner != this && !(unitCaster && unitCaster->IsPet())));
+    //npcbot - apply bot spell cast time mods
+    if (castTime > 0 && IsNPCBot())
+        ToCreature()->ApplyCreatureSpellCastTimeMods(spellInfo, castTime);
+    //end npcbot
 
     if (!unitCaster)
         return;
@@ -3677,6 +3699,11 @@ SpellMissInfo WorldObject::MagicSpellHitResult(Unit* victim, SpellInfo const* sp
         else
             HitChance += int32(unitCaster->m_modSpellHitChance * 100.0f);
     }
+
+    //npcbot: spell hit chance bonus
+    if (IsNPCBot())
+        HitChance -= int32(ToCreature()->GetCreatureMissChance() * 100.f);
+    //end npcbot
 
     if (HitChance < 100)
         HitChance = 100;
