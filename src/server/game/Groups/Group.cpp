@@ -1890,7 +1890,7 @@ void Group::CountTheRoll(Rolls::iterator rollI)
 
             if (maxguid) // pussywizard: added condition
             {
-                SendLootRollWon(ObjectGuid::Empty, maxguid, maxresul, ROLL_NEED, *roll);
+                SendLootRollWon(roll->itemGUID, maxguid, maxresul, ROLL_NEED, *roll);
                 player = ObjectAccessor::FindPlayer(maxguid);
 
                 if (player)
@@ -1971,7 +1971,7 @@ void Group::CountTheRoll(Rolls::iterator rollI)
 
             if (maxguid) // pussywizard: added condition
             {
-                SendLootRollWon(ObjectGuid::Empty, maxguid, maxresul, rollvote, *roll);
+                SendLootRollWon(roll->itemGUID, maxguid, maxresul, rollvote, *roll);
                 player = ObjectAccessor::FindPlayer(maxguid);
 
                 if (player)
