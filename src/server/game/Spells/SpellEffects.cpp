@@ -502,9 +502,9 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                     else if (m_caster->IsNPCBot() && (m_spellInfo->SpellFamilyFlags[0] & 0x800000) && m_spellInfo->SpellVisual[0] == 6587)
                     {
                         // converts each extra point of energy into ($f1+$AP/410) additional damage
-                        float ap = m_caster->GetTotalAttackPowerValue(BASE_ATTACK);
+                        float ap = unitCaster->GetTotalAttackPowerValue(BASE_ATTACK);
                         float multiple = ap / 410 + m_spellInfo->Effects[effIndex].DamageMultiplier;
-                        int32 energy = -(m_caster->ModifyPower(POWER_ENERGY, -30));
+                        int32 energy = -(unitCaster->ModifyPower(POWER_ENERGY, -30));
                         damage += int32(energy * multiple);
                         damage += int32(CalculatePct(m_caster->ToCreature()->GetCreatureComboPoints() * ap, 7));
                     }
@@ -589,7 +589,7 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                                         doses = combo;
 
                                     // Master Poisoner
-                                    Unit::AuraEffectList const& auraList = m_caster->GetAuraEffectsByType(SPELL_AURA_MOD_AURA_DURATION_BY_DISPEL_NOT_STACK);
+                                    Unit::AuraEffectList const& auraList = unitCaster->GetAuraEffectsByType(SPELL_AURA_MOD_AURA_DURATION_BY_DISPEL_NOT_STACK);
                                     for (Unit::AuraEffectList::const_iterator iter = auraList.begin(); iter != auraList.end(); ++iter)
                                     {
                                         if ((*iter)->GetSpellInfo()->SpellFamilyName == SPELLFAMILY_ROGUE && (*iter)->GetSpellInfo()->SpellIconID == 1960)
@@ -608,11 +608,11 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                                             unitTarget->RemoveAuraFromStack(spellId, m_caster->GetGUID());
 
                                     damage *= doses;
-                                    damage += int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK) * 0.09f * combo);
+                                    damage += int32(unitCaster->GetTotalAttackPowerValue(BASE_ATTACK) * 0.09f * combo);
                                 }
 
                                 // Eviscerate and Envenom Bonus Damage (item set effect)
-                                if (m_caster->HasAura(37169))
+                                if (unitCaster->HasAura(37169))
                                     damage += combo * 40;
                             }
                         }
@@ -638,11 +638,11 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                         {
                             if (uint32 combo = m_caster->ToCreature()->GetCreatureComboPoints())
                             {
-                                float ap = m_caster->GetTotalAttackPowerValue(BASE_ATTACK);
+                                float ap = unitCaster->GetTotalAttackPowerValue(BASE_ATTACK);
                                 damage += std::lroundf(ap * combo * 0.07f);
 
                                 // Eviscerate and Envenom Bonus Damage (item set effect)
-                                if (m_caster->HasAura(37169))
+                                if (unitCaster->HasAura(37169))
                                     damage += combo*40;
                             }
                         }
@@ -767,7 +767,7 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                             float average = (minTotal + maxTotal) / 2;
                             // Add main hand dps * effect[2] amount
                             int32 count = m_caster->CalculateSpellDamage(unitTarget, m_spellInfo, EFFECT_2);
-                            damage += count * int32(average * IN_MILLISECONDS) / m_caster->GetAttackTime(BASE_ATTACK);
+                            damage += count * int32(average * IN_MILLISECONDS) / unitCaster->GetAttackTime(BASE_ATTACK);
                         }
                         //end npcbot
                         break;
@@ -1634,8 +1634,8 @@ void Spell::EffectPowerDrain(SpellEffIndex effIndex)
         power -= unitTarget->GetSpellCritDamageReduction(power);
 
     //npcbot: handle Obsidian Destroyer's Drain Mana (target is friendly, amount is only limited by caster's max mana)
-    if (m_caster->GetTypeId() == TYPEID_UNIT && m_caster->ToCreature()->GetBotClass() == 13 && PowerType == POWER_MANA)
-        power = m_caster->GetMaxPower(PowerType);
+    if (m_caster->IsCreature() && m_caster->ToCreature()->GetBotClass() == 13 && PowerType == POWER_MANA)
+        power = unitCaster->GetMaxPower(PowerType);
     //end npcbot
 
     int32 newDamage = -(unitTarget->ModifyPower(PowerType, -int32(power)));
@@ -5382,7 +5382,7 @@ void Spell::EffectSkinning(SpellEffIndex /*effIndex*/)
 
     //npcbot: skinning nobody's kill
     if (!creature->hasLootRecipient())
-        creature->SetLootRecipient(m_caster);
+        creature->SetLootRecipient(unitCaster);
     //end npcbot
 
     creature->RemoveUnitFlag(UNIT_FLAG_SKINNABLE);

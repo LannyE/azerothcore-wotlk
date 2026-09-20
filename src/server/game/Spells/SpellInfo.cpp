@@ -466,16 +466,16 @@ int32 SpellEffectInfo::CalcValue(WorldObject const* caster, int32 const* bp, Uni
             pointsPerComboPoint = 2500.f;
         }
         //npcbot: bonus amount from combo points and specific mods
-        if (caster->IsNPCBot())
+        if (casterUnit->IsNPCBot())
         {
-            if (uint8 comboPoints = caster->ToCreature()->GetCreatureComboPoints())
+            if (uint8 comboPoints = casterUnit->ToCreature()->GetCreatureComboPoints())
                 value += pointsPerComboPoint * comboPoints;
         }
         //npcbot: bonus amount from combo points (vehicle)
-        else if (caster->IsVehicle() && caster->GetTypeId() == TYPEID_UNIT && caster->GetCharmerGUID().IsCreature() &&
+        else if (casterUnit->IsVehicle() && casterUnit->IsCreature() && casterUnit->GetCharmerGUID().IsCreature() &&
             PointsPerComboPoint)
         {
-            Unit const* bot = caster->GetCharmer();
+            Unit const* bot = casterUnit->GetCharmer();
             if (bot && bot->ToCreature()->IsNPCBot())
                 if (uint8 comboPoints = bot->ToCreature()->GetCreatureComboPoints())
                     value += pointsPerComboPoint * comboPoints;
@@ -1955,7 +1955,7 @@ SpellCastResult SpellInfo::CheckExplicitTarget(WorldObject const* caster, WorldO
         //npcbot
         else if ((neededTargets & TARGET_FLAG_CORPSE_ALLY) && unitTarget->IsNPCBot())
         {
-            if (!caster->_IsValidAssistTarget(unitTarget, this))
+            if (!unitCaster || !unitCaster->_IsValidAssistTarget(unitTarget, this))
                 return SPELL_FAILED_BAD_TARGETS;
         }
         //end npcbot

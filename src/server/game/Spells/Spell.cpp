@@ -3007,6 +3007,13 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
                     if (caster->IsPlayer() && m_spellInfo->HasAttribute(SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT) == 0 &&
                             m_spellInfo->HasAttribute(SPELL_ATTR4_SUPPRESS_WEAPON_PROCS) == 0 && (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED))
                         caster->ToPlayer()->CastItemCombatSpell(unitTarget, m_attackType, procVictim, dmgInfo.GetHitMask());
+
+            //npcbot
+            if (caster->IsNPCBot() &&
+                !m_spellInfo->HasAttribute(SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT) && !m_spellInfo->HasAttribute(SPELL_ATTR4_SUPPRESS_WEAPON_PROCS) &&
+                (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED))
+                caster->ToCreature()->CastCreatureItemCombatSpell(dmgInfo);
+            //end npcbot
                 }
 
                 m_damage = damageInfo.damage;
@@ -3030,13 +3037,6 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
                 if ((dmgInfo.GetHitMask() & (PROC_HIT_NORMAL | PROC_HIT_CRITICAL)) && caster->IsPlayer() && m_spellInfo->HasAttribute(SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT) == 0 &&
                         m_spellInfo->HasAttribute(SPELL_ATTR4_SUPPRESS_WEAPON_PROCS) == 0 && (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED))
                     caster->ToPlayer()->CastItemCombatSpell(unitTarget, m_attackType, procVictim | PROC_FLAG_TAKEN_DAMAGE, dmgInfo.GetHitMask());
-
-            //npcbot
-            if (caster->IsNPCBot() &&
-                !m_spellInfo->HasAttribute(SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT) && !m_spellInfo->HasAttribute(SPELL_ATTR4_SUPPRESS_WEAPON_PROCS) &&
-                (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED))
-                caster->ToCreature()->CastCreatureItemCombatSpell(dmgInfo);
-            //end npcbot
             }
 
             // Failed Pickpocket, reveal rogue
@@ -3225,9 +3225,9 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleA
                     if (unitCaster->IsPlayer() && !m_spellInfo->HasAttribute(SPELL_ATTR0_CU_NO_PVP_FLAG))
                         unitCaster->ToPlayer()->UpdatePvP(true);
                     //npcbot: bot assist case
-                    else if (m_caster->IsNPCBotOrPet() && m_caster->ToCreature()->IsFreeBot())
+                    else if (unitCaster->IsNPCBotOrPet() && unitCaster->ToCreature()->IsFreeBot())
                     {
-                        if (Unit const* bot = m_caster->IsNPCBotPet() ? m_caster->ToUnit()->GetCreator() : m_caster->ToUnit())
+                        if (Unit const* bot = unitCaster->IsNPCBotPet() ? unitCaster->GetCreator() : unitCaster)
                             BotMgr::SetBotContestedPvP(bot->ToCreature());
                     }
                     //end npcbot
@@ -3814,7 +3814,7 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, AuraEffect const
     // prevent exploit that allows to cast spell while sitting
     if (!IsTriggered() && !(m_spellInfo->AuraInterruptFlags & AURA_INTERRUPT_FLAG_NOT_SEATED) && !(m_spellInfo->Attributes & SPELL_ATTR0_ALLOW_WHILE_SITTING) && !m_triggeredByAuraSpell && unitCaster && unitCaster->IsSitState())
         //npcbot
-        if (!m_originalCaster || m_caster == m_originalCaster)
+        if (!m_originalCaster || unitCaster == m_originalCaster)
         //end npcbot
         unitCaster->SetStandState(UNIT_STAND_STATE_STAND);
 
@@ -4758,7 +4758,7 @@ void Spell::finish(bool ok)
 
     //npcbot
     if (!ok && m_caster->IsNPCBotOrPet())
-        BotMgr::OnBotSpellGo(m_caster, this, false);
+        BotMgr::OnBotSpellGo(unitCaster->ToCreature(), this, false);
     //end npcbot
 
     if (ok)
@@ -4814,7 +4814,7 @@ void Spell::finish(bool ok)
     // Stop Attack for some spells
     if (m_spellInfo->HasAttribute(SPELL_ATTR0_CANCELS_AUTO_ATTACK_COMBAT))
     //npcbot: disable for npcbots
-    if (!m_caster->IsNPCBot())
+    if (!unitCaster->IsNPCBot())
     //end npcbot
         unitCaster->AttackStop();
 }
@@ -6330,7 +6330,7 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* /*param1*/, uint32* /*para
         if (m_spellInfo->Effects[j].TargetA.GetTarget() == TARGET_UNIT_PET)
         {
             //npcbot: allow bot pet as target
-            if (m_caster->IsNPCBot() && m_caster->ToCreature()->GetBotsPet())
+            if (unitCaster->IsNPCBot() && unitCaster->ToCreature()->GetBotsPet())
                 break;
             else
             //end npcbot
@@ -6697,14 +6697,13 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* /*param1*/, uint32* /*para
                             m_spellInfo->Effects[i].TargetA.GetTarget() != TARGET_GAMEOBJECT_ITEM_TARGET)
                         break;
 
-                //npcbot
-                if (m_caster->IsNPCBot())
-                {
-                    if (m_spellInfo->Effects[i].TargetA.GetTarget() == TARGET_GAMEOBJECT_TARGET && !m_targets.GetGOTarget())
-                        return SPELL_FAILED_BAD_TARGETS;
-                    break;
-                }
-                //end npcbot
+                    if (m_caster->IsNPCBot())
+                    {
+                        if (m_spellInfo->Effects[i].TargetA.GetTarget() == TARGET_GAMEOBJECT_TARGET && !m_targets.GetGOTarget())
+                            return SPELL_FAILED_BAD_TARGETS;
+                        break;
+                    }
+                    //end npcbot
 
                     if (!unitCaster || !unitCaster->IsPlayer()  // only players can open locks, gather etc.
                             // we need a go target in case of TARGET_GAMEOBJECT_TARGET
@@ -8372,9 +8371,6 @@ void Spell::Delayed() // only called in DealDamage()
 void Spell::DelayedChannel()
 {
     //npcbot
-    if (!m_caster)
-        return;
-
     if (m_caster && m_caster->IsNPCBot() && m_spellState == SPELL_STATE_CASTING && (m_spellInfo->ChannelInterruptFlags & CHANNEL_FLAG_DELAY) && !isDelayableNoMore())
     {
         Creature* creature = m_caster->ToCreature();

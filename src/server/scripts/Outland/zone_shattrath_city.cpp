@@ -158,7 +158,7 @@ public:
                 Start(false, player->GetGUID());
 
                 // SummonGuardian installs follow movement after IsSummonedBy returns, so remove it on the next update.
-                scheduler.Schedule(1ms, [this](TaskContext /*task*/)
+                scheduler.Schedule(1ms, [this](TaskContext /*task*/ /*) //added the extra comment line cause this closed my comment block- Lanny
                 {
                     if (me->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_ACTIVE) == FOLLOW_MOTION_TYPE)
                     {
