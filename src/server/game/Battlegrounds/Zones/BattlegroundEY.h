@@ -418,6 +418,7 @@ private:
     /* Scorekeeping */
     void AddPoints(TeamId teamId, uint32 points);
 
+public:
     struct CapturePointInfo
     {
         CapturePointInfo() : _ownerTeamId(TEAM_NEUTRAL), _barStatus(BG_EY_PROGRESS_BAR_STATE_MIDDLE), _areaTrigger(0)
@@ -430,7 +431,7 @@ private:
         int8 _barStatus;
         uint32 _areaTrigger;
         int8 _playersCount[PVP_TEAMS_COUNT];
-        Player* player = nullptr;
+        ObjectGuid _playerGuid;
         //npcbot
         Creature* bot = nullptr;
         //end npcbot
@@ -440,6 +441,13 @@ private:
         bool IsUncontrolled() const { return _ownerTeamId == TEAM_NEUTRAL; }
     };
 
+    [[nodiscard]] CapturePointInfo const& GetCapturePointInfo(uint32 node) const
+    {
+        ASSERT(node < EY_POINTS_MAX);
+        return _capturePointInfo[node];
+    }
+
+private:
     CapturePointInfo _capturePointInfo[EY_POINTS_MAX];
     EventMap _bgEvents;
     uint32 _honorTics;

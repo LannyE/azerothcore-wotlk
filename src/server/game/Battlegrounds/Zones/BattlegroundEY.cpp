@@ -20,6 +20,7 @@
 #include "Creature.h"
 #include "GameGraveyard.h"
 #include "GameTime.h"
+#include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "Util.h"
@@ -137,6 +138,7 @@ void BattlegroundEY::UpdatePointsState()
         pointsVec.push_back(GetBGObject(BG_EY_OBJECT_TOWER_CAP_FEL_REAVER + point));
         _capturePointInfo[point]._playersCount[TEAM_ALLIANCE] = 0;
         _capturePointInfo[point]._playersCount[TEAM_HORDE] = 0;
+        _capturePointInfo[point]._playerGuid.Clear();
     }
 
     //npcbot
@@ -177,7 +179,7 @@ void BattlegroundEY::UpdatePointsState()
                     //npcbot
                     _capturePointInfo[point].bot = nullptr;
                     //end npcbot
-                    _capturePointInfo[point].player = itr->second;
+                    _capturePointInfo[point]._playerGuid = itr->second->GetGUID();
 
                     // Xinef: ugly hax... area trigger is no longer called by client...
                     if (pointObject->GetEntry() == BG_OBJECT_FR_TOWER_CAP_EY_ENTRY && itr->second->GetDistance2d(2043.96f, 1729.68f) < 3.0f)
@@ -211,10 +213,10 @@ void BattlegroundEY::UpdatePointsState()
         if (pointOwnerTeamId != _capturePointInfo[point]._ownerTeamId)
         {
             if (_capturePointInfo[point].IsUncontrolled())
-                EventTeamCapturedPoint(_capturePointInfo[point].player, pointOwnerTeamId, point);
+                EventTeamCapturedPoint(ObjectAccessor::FindPlayer(_capturePointInfo[point]._playerGuid), pointOwnerTeamId, point);
 
             if (pointOwnerTeamId == TEAM_NEUTRAL && _capturePointInfo[point].IsUnderControl())
-                EventTeamLostPoint(_capturePointInfo[point].player, point);
+                EventTeamLostPoint(ObjectAccessor::FindPlayer(_capturePointInfo[point]._playerGuid), point);
         }
     }
 }
