@@ -153,7 +153,7 @@ void BattlegroundEY::UpdatePointsState()
                     if (bot->IsAlive() && !bot->HasInvisibilityAura() && !bot->HasStealthAura() && bot->IsWithinDistInMap(pointObject, BG_EY_POINT_RADIUS))
                     {
                         ++_capturePointInfo[point]._playersCount[GetBotTeamId(p.first)];
-                        _capturePointInfo[point].player = nullptr;
+                        _capturePointInfo[point]._playerGuid.Clear();
                         _capturePointInfo[point].bot = const_cast<Creature*>(bot);
                         if (pointObject->GetEntry() == BG_OBJECT_FR_TOWER_CAP_EY_ENTRY && bot->GetDistance2d(2043.96f, 1729.68f) < 3.0f)
                             HandleBotAreaTrigger(_capturePointInfo[point].bot, AT_FEL_REAVER_POINT);
@@ -199,7 +199,7 @@ void BattlegroundEY::UpdatePointsState()
             pointOwnerTeamId = TEAM_ALLIANCE;
 
         //npcbot
-        if (pointOwnerTeamId != _capturePointInfo[point]._ownerTeamId && !_capturePointInfo[point].player)
+        if (pointOwnerTeamId != _capturePointInfo[point]._ownerTeamId && !_capturePointInfo[point]._playerGuid)
         {
             if (_capturePointInfo[point].IsUncontrolled())
                 EventBotTeamCapturedPoint(_capturePointInfo[point].bot, pointOwnerTeamId, point);
