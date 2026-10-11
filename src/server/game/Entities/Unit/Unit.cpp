@@ -2267,7 +2267,7 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     // If this is a creature and it attacks from behind it has a probability to daze it's victim
     if ((damageInfo->damages[0].damage + damageInfo->damages[1].damage) && ((damageInfo->hitOutCome == MELEE_HIT_CRIT || damageInfo->hitOutCome == MELEE_HIT_CRUSHING || damageInfo->hitOutCome == MELEE_HIT_NORMAL || damageInfo->hitOutCome == MELEE_HIT_GLANCING) &&
                                !IsPlayer() && !ToCreature()->IsControlledByPlayer() && !victim->HasInArc(M_PI, this)
-                               && (victim->IsPlayer() || !victim->ToCreature()->isWorldBoss()) && !victim->IsVehicle()))
+                               && (victim->IsPlayer() || (!victim->ToCreature()->isWorldBoss() && !victim->IsVehicle()))))
     //npcbot: prevent daze caused by bots
     if (!IsNPCBotOrPet())
     //end npcbot
@@ -11003,6 +11003,18 @@ bool Unit::IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell) con
     return _IsValidAttackTarget(target, bySpell);
 }
 
+bool Unit::IsAreaEffectPvPBlocked(Unit const* target, SpellInfo const* bySpell) const
+{
+    if (!bySpell || !bySpell->IsAffectingArea() || bySpell->HasAttribute(SPELL_ATTR5_IGNORE_AREA_EFFECT_PVP_CHECK))
+        return false;
+
+    // only player controlled units take part in PvP, PvP flagged creatures remain valid targets
+    if (!HasUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED) || !target->HasUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED))
+        return false;
+
+    return !IsPvP();
+}
+
 // function based on function Unit::CanAttack from 13850 client
 bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, WorldObject const* obj) const
 {
@@ -11206,7 +11218,7 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
     // additional checks - only PvP case
     if (playerAffectingAttacker && playerAffectingTarget)
     {
-        if (!IsPvP() && bySpell && bySpell->IsAffectingArea() && !bySpell->HasAttribute(SPELL_ATTR5_IGNORE_AREA_EFFECT_PVP_CHECK))
+        if (IsAreaEffectPvPBlocked(target, bySpell))
             return false;
 
         if (target->IsPvP())
