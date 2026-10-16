@@ -1,5 +1,6 @@
 -- DB update 2026_10_15_03 -> 2026_10_15_04
 --
+/* Already implmented 10-16-26 
 SET @PATH := 70141 * 10;
 
 UPDATE `creature` SET `MovementType` = 2 WHERE `guid` = 70141 AND `id` = 19657;
@@ -35,3 +36,4 @@ DELETE FROM `creature_formations` WHERE `memberGUID` IN (70141, 70089);
 INSERT INTO `creature_formations` (`leaderGUID`, `memberGUID`, `dist`, `angle`, `groupAI`, `point_1`, `point_2`) VALUES
 (70141, 70141, 0, 0, 3, 0, 0),
 (70141, 70089, 3, 180, 515, 0, 0);
+*/
