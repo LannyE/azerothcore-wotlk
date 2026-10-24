@@ -81,6 +81,8 @@
 #include "botconfig.h"
 #include "botdatamgr.h"
 #include "botmgr.h"
+#include "bot_ai.h"
+#include "bpet_ai.h"
 //end npcbot
 
 // Speeds at Rate.MoveSpeed.NPC/Player = 1
