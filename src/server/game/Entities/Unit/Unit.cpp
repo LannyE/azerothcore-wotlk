@@ -1869,28 +1869,23 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
 
     // School Immune check
     uint8 immunedMask = 0;
-    bool hasNonPhysicalSchoolMask = false;
-    for (uint8 i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
-    {
-        if (damageInfo->target->IsImmunedToDamageOrSchool(SpellSchoolMask(damageInfo->damages[i].damageSchoolMask)))
-        {
-            immunedMask |= (1 << i);
-            if (damageInfo->damages[i].damageSchoolMask != SPELL_SCHOOL_MASK_NORMAL)
-            {
-                hasNonPhysicalSchoolMask = true;
-            }
-        }
-    }
+    float minDamage = 0.0f;
+    float maxDamage = 0.0f;
 
-    // School Immune check
-    if (immunedMask & ((1 << 0) | (1 << 1)))
+    for (uint8 i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
+        if (damageInfo->target->IsImmunedToDamageOrSchool(SpellSchoolMask(damageInfo->damages[i].damageSchoolMask)))
+            immunedMask |= (1 << i);
+
+    // Part 0 always carries attack power damage, so the swing can only be immune if part 0 is immune.
+    // Part 1 then blocks immunity only when it carries damage (0 for an empty slot and for creatures).
+    if (immunedMask & (1 << 0) && !(immunedMask & (1 << 1)))
+        CalculateMinMaxDamage(attackType, false, true, minDamage, maxDamage, 1);
+
+    if (immunedMask & (1 << 0) && (immunedMask & (1 << 1) || maxDamage <= 0))
     {
-        if (hasNonPhysicalSchoolMask || immunedMask == ((1 << 0) | (1 << 1)))
-        {
-            damageInfo->HitInfo |= HITINFO_NORMALSWING;
-            damageInfo->TargetState = VICTIMSTATE_IS_IMMUNE;
-            return;
-        }
+        damageInfo->HitInfo |= HITINFO_NORMALSWING;
+        damageInfo->TargetState = VICTIMSTATE_IS_IMMUNE;
+        return;
     }
 
     for (uint8 i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
@@ -2081,10 +2076,13 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
         {
             damageInfo->HitInfo     |= HITINFO_GLANCING;
             damageInfo->TargetState  = VICTIMSTATE_HIT;
-            int32 leveldif = int32(victim->GetLevel()) - int32(GetLevel());
-            if (leveldif > 3)
-                leveldif = 3;
-            float reducePercent = 1 - leveldif * 0.1f;
+            int32 leveldif = int32(victim->getLevelForTarget(this)) - int32(GetLevel());
+            leveldif = std::min(std::max(leveldif, 1), 3);
+
+            // 1-10% damage reduction against same level and +1 targets, up to 20-30% against a +3 boss
+            int32 const reductionMax = leveldif * 10;
+            int32 const reductionMin = std::max(1, reductionMax - 10);
+            float reducePercent = 1.0f - irand(reductionMin, reductionMax) / 100.0f;
 
             for (uint8 i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
             {
@@ -3348,23 +3346,24 @@ MeleeHitOutcome Unit::RollMeleeOutcomeAgainst(Unit const* victim, WeaponAttackTy
         }
     }
 
-    // Max 40% chance to score a glancing blow against mobs that are higher level (can do only players and pets and not with ranged weapon)
+    // Max 40% chance to score a glancing blow against mobs of the same or higher level (can do only players and pets and not with ranged weapon)
     //npcbot: no glances on npcbots and their pets
     if (!victim->IsNPCBotOrPet())
     //end npcbot
     if (attType != RANGED_ATTACK &&
             (IsPlayer() || IsPet()) &&
             !victim->IsPlayer() && !victim->IsPet() &&
-            GetLevel() < victim->getLevelForTarget(this))
+            GetLevel() <= victim->getLevelForTarget(this))
     {
         // cap possible value (with bonuses > max skill)
         int32 skill = attackerWeaponSkill;
         int32 maxskill = attackerMaxSkillValueForLevel;
         skill = (skill > maxskill) ? maxskill : skill;
 
-        tmp = (10 + (victimDefenseSkill - skill)) * 100;
+        // 6% against same level targets, 24% against a +3 boss
+        tmp = 600 + (victimDefenseSkill - skill) * 120;
         tmp = tmp > 4000 ? 4000 : tmp;
-        if (roll < (sum += tmp))
+        if (tmp > 0 && roll < (sum += tmp))
         {
             LOG_DEBUG("entities.unit", "RollMeleeOutcomeAgainst: GLANCING <{}, {})", sum - 4000, sum);
             return MELEE_HIT_GLANCING;
@@ -3953,7 +3952,7 @@ float Unit::GetUnitCriticalChance(WeaponAttackType attackType, Unit const* victi
         Unit::ApplyResilience(victim, &crit, nullptr, false, CR_CRIT_TAKEN_RANGED);
 
     // Apply crit chance from defence skill
-    crit += (int32(GetMaxSkillValueForLevel(victim)) - int32(victim->GetDefenseSkillValue(this))) * 0.04f;
+    crit += GetCritChanceFromSkillDiff(victim);
 
     // xinef: SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE should be calculated at the end
     crit += victim->GetTotalAuraModifier(SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE);
@@ -3961,6 +3960,20 @@ float Unit::GetUnitCriticalChance(WeaponAttackType attackType, Unit const* victi
     if (crit < 0.0f)
         crit = 0.0f;
     return crit;
+}
+
+float Unit::GetCritChanceFromSkillDiff(Unit const* victim) const
+{
+    int32 const skillDiff = int32(victim->GetDefenseSkillValue(this)) - int32(GetMaxSkillValueForLevel(victim));
+    if (victim->IsPlayer() || skillDiff <= 0)
+        return -skillDiff * 0.04f;
+
+    // crit suppression vs higher level creatures, 4.8% against a +3 boss
+    float suppression = skillDiff * 0.12f;
+    if (skillDiff >= 15)
+        suppression += 3.0f;
+
+    return -suppression;
 }
 
 uint32 Unit::GetWeaponSkillValue (WeaponAttackType attType, Unit const* target) const
@@ -9517,6 +9530,16 @@ float Unit::SpellTakenCritChance(Unit const* caster, SpellInfo const* spellProto
                             }
                             break;
                     }
+
+                    // spell crit suppression vs higher level creatures: none at +1, 0.3% at +2, 2.1% against a +3 boss
+                    if (IsCreature() && !spellProto->IsPositive())
+                    {
+                        int32 const levelDiff = int32(getLevelForTarget(caster)) - int32(caster->GetLevel());
+                        if (levelDiff == 2)
+                            crit_chance -= 0.3f;
+                        else if (levelDiff >= 3)
+                            crit_chance -= 2.1f + (levelDiff - 3) * 0.7f;
+                    }
                 }
                 break;
             }
@@ -9573,7 +9596,7 @@ float Unit::SpellTakenCritChance(Unit const* caster, SpellInfo const* spellProto
 
                 // Apply crit chance from defence skill
                 if (caster)
-                    crit_chance += (int32(caster->GetMaxSkillValueForLevel(this)) - int32(GetDefenseSkillValue(caster))) * 0.04f;
+                    crit_chance += caster->GetCritChanceFromSkillDiff(this);
 
                 break;
             }
@@ -13553,12 +13576,12 @@ bool Unit::IsPolymorphed() const
 void Unit::RecalculateObjectScale()
 {
     int32 scaleAuras = GetTotalAuraModifier(SPELL_AURA_MOD_SCALE) + GetTotalAuraModifier(SPELL_AURA_MOD_SCALE_2);
-    float scale = GetNativeObjectScale() + CalculatePct(1.0f, scaleAuras);
+    float scale = _displayScale.value_or(GetNativeObjectScale()) + CalculatePct(1.0f, scaleAuras);
     float scaleMin = IsPlayer() ? 0.1f : 0.01f;
     SetObjectScale(std::max(scale, scaleMin));
 }
 
-void Unit::SetDisplayId(uint32 modelId, float displayScale /*=1.f*/)
+void Unit::SetDisplayId(uint32 modelId, std::optional<float> displayScale /*= {}*/)
 {
     SetUInt32Value(UNIT_FIELD_DISPLAYID, modelId);
 
@@ -13566,9 +13589,21 @@ void Unit::SetDisplayId(uint32 modelId, float displayScale /*=1.f*/)
     if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(modelId))
         SetByteValue(UNIT_FIELD_BYTES_0, 2, minfo->gender);
 
-    SetObjectScale(displayScale);
+    _displayScale = displayScale;
+    RecalculateObjectScale();
 
     sScriptMgr->OnDisplayIdChange(this, modelId);
+
+    //npcbot: send group update for bot pet
+    if (GetTypeId() == TYPEID_UNIT)
+    {
+        if (Creature* creature = ToCreature())
+            if (creature->IsNPCBotPet())
+                if (Creature const* botPetOwner = creature->GetBotPetAI() ? creature->GetBotPetAI()->GetPetsOwner() : nullptr)
+                    if (botPetOwner->GetBotAI()->GetGroup())
+                        BotMgr::SetBotGroupUpdateFlag(botPetOwner, GROUP_UPDATE_FLAG_PET_MODEL_ID);
+    }
+    //end npcbot
 }
 
 void Unit::RestoreDisplayId()
