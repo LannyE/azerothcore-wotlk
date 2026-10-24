@@ -83,7 +83,8 @@
 #include "botmgr.h"
 //end npcbot
 
-float baseMoveSpeed[MAX_MOVE_TYPE] =
+// Speeds at Rate.MoveSpeed.NPC/Player = 1
+static constexpr std::array<float, MAX_MOVE_TYPE> DefaultMoveSpeed =
 {
     2.5f,                  // MOVE_WALK
     7.0f,                  // MOVE_RUN
@@ -96,18 +97,17 @@ float baseMoveSpeed[MAX_MOVE_TYPE] =
     3.14f                  // MOVE_PITCH_RATE
 };
 
-float playerBaseMoveSpeed[MAX_MOVE_TYPE] =
+std::array<float, MAX_MOVE_TYPE> baseMoveSpeed = DefaultMoveSpeed;
+std::array<float, MAX_MOVE_TYPE> playerBaseMoveSpeed = DefaultMoveSpeed;
+
+void ApplyMoveSpeedRates(float npcRate, float playerRate)
 {
-    2.5f,                  // MOVE_WALK
-    7.0f,                  // MOVE_RUN
-    4.5f,                  // MOVE_RUN_BACK
-    4.722222f,             // MOVE_SWIM
-    2.5f,                  // MOVE_SWIM_BACK
-    3.141594f,             // MOVE_TURN_RATE
-    7.0f,                  // MOVE_FLIGHT
-    4.5f,                  // MOVE_FLIGHT_BACK
-    3.14f                  // MOVE_PITCH_RATE
-};
+    for (uint8 i = 0; i < MAX_MOVE_TYPE; ++i)
+    {
+        baseMoveSpeed[i] = DefaultMoveSpeed[i] * npcRate;
+        playerBaseMoveSpeed[i] = DefaultMoveSpeed[i] * playerRate;
+    }
+}
 
 DamageInfo::DamageInfo(Unit* _attacker, Unit* _victim, uint32 _damage, SpellInfo const* _spellInfo, SpellSchoolMask _schoolMask, DamageEffectType _damageType, uint32 cleanDamage)
     : m_attacker(_attacker), m_victim(_victim), m_damage(_damage), m_spellInfo(_spellInfo), m_schoolMask(_schoolMask),
@@ -5355,17 +5355,15 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, ObjectGuid casterGUID, U
             int32 damage[MAX_SPELL_EFFECTS];
             int32 baseDamage[MAX_SPELL_EFFECTS];
             uint8 effMask = 0;
-            uint8 recalculateMask = 0;
             Unit* caster = aura->GetCaster();
             for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             {
                 if (aura->GetEffect(i))
                 {
                     baseDamage[i] = aura->GetEffect(i)->GetBaseAmount();
-                    damage[i] = aura->GetEffect(i)->GetAmount();
+                    // only one stack is stolen
+                    damage[i] = aura->GetEffect(i)->GetAmount() / aura->GetStackAmount();
                     effMask |= (1 << i);
-                    if (aura->GetEffect(i)->CanBeRecalculated())
-                        recalculateMask |= (1 << i);
                 }
                 else
                 {
@@ -5406,7 +5404,10 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, ObjectGuid casterGUID, U
                             caster->GetSingleCastAuras().push_back(aura);
                         }
                         // FIXME: using aura->GetMaxDuration() maybe not blizzlike but it fixes stealing of spells like Innervate
-                        newAura->SetLoadedState(aura->GetMaxDuration(), int32(dur), stealCharge ? 1 : aura->GetCharges(), 1, recalculateMask, &damage[0]);
+                        // Keep the original caster's amounts: recalculating them with the stealer as caster would apply
+                        // the stealer's spell mods and bonuses (e.g. Magic Attunement on a stolen Dampen Magic)
+                        newAura->SetLoadedState(aura->GetMaxDuration(), int32(dur),
+                            stealCharge ? 1 : aura->GetCharges(), 1, 0, &damage[0]);
 
                         // Reset periodic timers so stolen HoTs tick properly
                         // For stolen auras we need fresh tick counters since no ticks have occurred yet
