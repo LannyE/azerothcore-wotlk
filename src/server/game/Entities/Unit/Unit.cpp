@@ -81,8 +81,6 @@
 #include "botconfig.h"
 #include "botdatamgr.h"
 #include "botmgr.h"
-#include "bot_ai.h"
-#include "bpet_ai.h"
 //end npcbot
 
 // Speeds at Rate.MoveSpeed.NPC/Player = 1
@@ -13610,18 +13608,16 @@ void Unit::SetDisplayId(uint32 modelId, std::optional<float> displayScale /*= {}
     _displayScale = displayScale;
     RecalculateObjectScale();
 
-    sScriptMgr->OnDisplayIdChange(this, modelId);
-
     //npcbot: send group update for bot pet
-    if (GetTypeId() == TYPEID_UNIT)
-    {
-        if (Creature* creature = ToCreature())
-            if (creature->IsNPCBotPet())
-                if (Creature const* botPetOwner = creature->GetBotPetAI() ? creature->GetBotPetAI()->GetPetsOwner() : nullptr)
-                    if (botPetOwner->GetBotAI()->GetGroup())
-                        BotMgr::SetBotGroupUpdateFlag(botPetOwner, GROUP_UPDATE_FLAG_PET_MODEL_ID);
-    }
+    //if (IsNPCBotPet())
+    //{
+    //    if (Creature const* botPetOwner = ToCreature()->GetBotPetAI() ? ToCreature()->GetBotPetAI()->GetPetsOwner() : nullptr)
+    //        if (botPetOwner->GetBotAI()->GetGroup())
+    //            BotMgr::SetBotGroupUpdateFlag(botPetOwner, GROUP_UPDATE_FLAG_PET_MODEL_ID);
+    //}
     //end npcbot
+
+    sScriptMgr->OnDisplayIdChange(this, modelId);
 }
 
 void Unit::RestoreDisplayId()
