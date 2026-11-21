@@ -2093,7 +2093,7 @@ public:
                         break;
                     case EVENT_QUAKE_SHATTER:
 						//npcbot
-						if (GameObject const* platform = instance->GetGameObject(ArthasPlatformGUID))
+						if (GameObject const* platform = GetGameObject(DATA_ARTHAS_PLATFORM))
 							FrozenThronePlatformDestructionEvent(this, platform->GetPosition())();
 						//end npcbot
 
