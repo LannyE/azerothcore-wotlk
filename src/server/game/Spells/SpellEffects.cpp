@@ -51,6 +51,7 @@
 #include "Spell.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
+#include "SpellHistory.h"
 #include "SpellMgr.h"
 #include "TemporarySummon.h"
 #include "Totem.h"
@@ -1146,7 +1147,7 @@ void Spell::EffectTriggerSpell(SpellEffIndex effIndex)
     // Remove spell cooldown (not category) if spell triggering spell with cooldown and same category
     if (unitCaster && unitCaster->IsPlayer() && spellInfo->CategoryRecoveryTime && m_spellInfo->GetCategory() == spellInfo->GetCategory())
     {
-        unitCaster->ToPlayer()->RemoveSpellCooldown(spellInfo->Id);
+        unitCaster->ToPlayer()->GetSpellHistory()->ResetCooldown(spellInfo->Id);
     }
 
     // original caster guid only for GO cast
@@ -1209,7 +1210,7 @@ void Spell::EffectTriggerMissileSpell(SpellEffIndex effIndex)
     // Remove spell cooldown (not category) if spell triggering spell with cooldown and same category
     if (unitCaster && unitCaster->IsPlayer() && spellInfo->CategoryRecoveryTime && m_spellInfo->GetCategory() == spellInfo->GetCategory())
     {
-        unitCaster->ToPlayer()->RemoveSpellCooldown(spellInfo->Id);
+        unitCaster->ToPlayer()->GetSpellHistory()->ResetCooldown(spellInfo->Id);
     }
 
     // original caster guid only for GO cast
@@ -3654,12 +3655,7 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
 
             OldSummon->SetHealth(OldSummon->GetMaxHealth());
             OldSummon->SetPower(OldSummon->getPowerType(), OldSummon->GetMaxPower(OldSummon->getPowerType()));
-            // notify player
-            for (CreatureSpellCooldowns::const_iterator itr = OldSummon->m_CreatureSpellCooldowns.begin(); itr != OldSummon->m_CreatureSpellCooldowns.end(); ++itr)
-                owner->SendClearCooldown(itr->first, OldSummon);
-
-            // actually clear cooldowns
-            OldSummon->m_CreatureSpellCooldowns.clear();
+            OldSummon->GetSpellHistory()->ResetAllCooldowns();
             Unit::AuraApplicationMap& myAuras = OldSummon->GetAppliedAuras();
             for (Unit::AuraApplicationMap::iterator i = myAuras.begin(); i != myAuras.end();)
             {
@@ -3697,7 +3693,7 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
     // Reset cooldowns
     if (!owner->IsClass(CLASS_HUNTER, CLASS_CONTEXT_PET))
     {
-        pet->m_CreatureSpellCooldowns.clear();
+        pet->GetSpellHistory()->ResetAllCooldowns();
         owner->PetSpellInitialize();
     }
 
@@ -4200,7 +4196,7 @@ void Spell::EffectInterruptCast(SpellEffIndex effIndex)
                 if (m_originalCaster)
                 {
                     int32 duration = m_originalCaster->ModSpellDuration(m_spellInfo, unitTarget, m_originalCaster->CalcSpellDuration(m_spellInfo), false, 1 << effIndex);
-                    unitTarget->ProhibitSpellSchool(curSpellInfo->GetSchoolMask(), duration/*spellInfo->GetDuration()*/);
+                    unitTarget->GetSpellHistory()->LockSpellSchool(curSpellInfo->GetSchoolMask(), duration/*spellInfo->GetDuration()*/);
                 }
                 ExecuteLogEffectInterruptCast(effIndex, unitTarget, curSpellInfo->Id);
                 unitTarget->InterruptSpell(CurrentSpellTypes(i), false);
@@ -4651,7 +4647,7 @@ void Spell::EffectStuck(SpellEffIndex /*effIndex*/)
 
     // xinef: no hearthstone in bag or on cooldown
     Item* hearthStone = target->GetItemByEntry(6948);
-    if (!hearthStone || target->HasSpellCooldown(8690))
+    if (!hearthStone || target->GetSpellHistory()->HasCooldown(8690))
     {
         float o = rand_norm() * 2 * M_PI;
         Position pos = *target;
@@ -6850,7 +6846,7 @@ void Spell::EffectCastButtons(SpellEffIndex effIndex)
         if (!spellInfo)
             continue;
 
-        if (!p_caster->HasSpell(spell_id) || p_caster->HasSpellCooldown(spell_id))
+        if (!p_caster->HasSpell(spell_id) || p_caster->GetSpellHistory()->HasCooldown(spell_id))
             continue;
 
         if (!spellInfo->HasAttribute(SPELL_ATTR7_CAN_BE_MULTI_CAST))
