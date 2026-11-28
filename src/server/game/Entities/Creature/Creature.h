@@ -531,7 +531,7 @@ public:
     MeleeHitOutcome BotRollMeleeOutcomeAgainst(Unit const* victim, WeaponAttackType attType) const;
 
     void CastCreatureItemCombatSpell(DamageInfo const& damageInfo);
-    //bool HasSpellCooldown(uint32 spellId) const;
+    bool HasSpellCooldown(uint32 spellId) const;
     void AddBotSpellCooldown(uint32 spellId, uint32 cooldown);
     void ReleaseBotSpellCooldown(uint32 spellId);
     void SpendBotRunes(SpellInfo const* spellInfo, bool didHit);
